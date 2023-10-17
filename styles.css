@@ -1,0 +1,12 @@
+.kv-list {
+    transition: all 0.3s ease-in-out;
+}
+
+.kv-list-row {
+    padding: 4px 10px;
+    transition: all 0.3s ease-in-out;
+}
+
+.kv-list-row.kv-bg-color {
+    background-color: var(--nav-item-background-hover);
+}
