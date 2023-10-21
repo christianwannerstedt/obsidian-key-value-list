@@ -1,8 +1,10 @@
-import { EditorView, WidgetType } from "@codemirror/view";
+import { WidgetType } from "@codemirror/view";
 import { ListItemWidth } from "./types";
+import KeyValueListPlugin from "./main";
 
 export class KeyValueLineWidget extends WidgetType {
 	constructor(
+		readonly plugin: KeyValueListPlugin,
 		readonly listId: number,
 		readonly value: string,
 		readonly listItemWidth: ListItemWidth,
@@ -17,16 +19,27 @@ export class KeyValueLineWidget extends WidgetType {
 	// }
 
 	toDOM() {
-		const split: number = this.value.indexOf(": ");
-		const key: string = this.value.substring(0, split + 1);
-		const val: string = this.value.substring(split + 2);
-		const colorize: boolean = this.listIndex % 2 == 0;
+		const delimiter = this.plugin.settings.delimiter || ":";
+		const split: number = this.value.indexOf(delimiter);
+		const key: string = this.value
+			.substring(
+				0,
+				split +
+					(this.plugin.settings.displayDelimiter
+						? delimiter.length
+						: 0)
+			)
+			.trim();
+		const val: string = this.value
+			.substring(split + delimiter.length)
+			.trim();
+		const isEven: boolean = this.listIndex % 2 == 0;
 
 		const container = document.createElement("span");
 		container.id = `kv-${this.listId}-${this.listIndex}`;
 		container.style.display = "inline-block";
 		container.className = `kv-list-row kv-list-row-${this.listId} ${
-			colorize ? "kv-bg-color" : ""
+			isEven ? "kv-list-row-even" : "kv-list-row-odd"
 		}`;
 		if (this.listItemWidth.row) {
 			container.style.minWidth = `${this.listItemWidth.row}px`;

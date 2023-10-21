@@ -1,11 +1,22 @@
 import { Editor } from "obsidian";
-import { List } from "./List";
+import { List } from "./list";
+import KeyValueListPlugin from "./main";
 
-const keyValueReg = new RegExp(`^[ \t]*(?:[-*+])( |\t)(.*)\:(.*) (.*)`);
 const listItemReg = new RegExp(`^[ \t]*(?:[-*+]|\\d+\\.)( |\t)`);
 
 export class ListParser {
-	constructor() {}
+	keyValueReg: RegExp;
+
+	constructor(private plugin: KeyValueListPlugin) {
+		this.update();
+	}
+
+	update() {
+		const delimiter = this.plugin.settings.delimiter || ": ";
+		this.keyValueReg = new RegExp(
+			`^[ \t]*(?:[-*+])( |\t)(.*)${delimiter}(.*)`
+		);
+	}
 
 	/**
 	 * Collects all lists within a given range.
@@ -82,6 +93,6 @@ export class ListParser {
 	}
 
 	private isKeyValueListItem(line: string): boolean {
-		return keyValueReg.test(line);
+		return this.keyValueReg.test(line);
 	}
 }
