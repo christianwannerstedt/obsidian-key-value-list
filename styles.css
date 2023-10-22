@@ -1,12 +1,16 @@
-.kv-list {
-    transition: all 0.3s ease-in-out;
+.kvl-row,
+.kvl-row-inner,
+.kvl-key,
+.kvl-key-inner,
+.kvl-value {
+    display: inline-block;
 }
 
-.kv-list-row {
-    padding: 4px 10px;
-    transition: all 0.3s ease-in-out;
+.kvl-row-inner {
+    display: flex;
+    justify-content: flex-start;
 }
 
-.kv-list-row.kv-bg-color {
-    background-color: var(--nav-item-background-hover);
+.kvl-row.kvl-row-even.striped {
+    background-color: var(--background-secondary);
 }

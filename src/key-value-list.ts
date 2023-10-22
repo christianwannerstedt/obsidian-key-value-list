@@ -10,12 +10,12 @@ import {
   ViewPlugin,
   ViewUpdate,
 } from "@codemirror/view";
-import { KeyValueLineWidget } from "src/widgets";
-import { ListParser } from "src/list-parser";
-import { List } from "./list";
-import KeyValueListPlugin from "main";
 import { Editor, editorInfoField } from "obsidian";
+import KeyValueListPlugin from "./main";
+import { List } from "./list";
 import { ListItemWidth } from "./types";
+import { KeyValueLineWidget } from "./widgets";
+import { ListParser } from "./list-parser";
 
 export class KeyValueList {
   constructor(private plugin: KeyValueListPlugin, private parser: ListParser) {
