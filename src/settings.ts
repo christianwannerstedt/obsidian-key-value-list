@@ -11,6 +11,8 @@ import {
 import KeyValueListPlugin from "./main";
 
 export interface KeyValueListPluginSettings {
+  bullet: string;
+  displayBullet: boolean;
   delimiter: string;
   displayDelimiter: boolean;
   maxKeyWidth: number;
@@ -26,6 +28,8 @@ export interface KeyValueListPluginSettings {
 }
 
 export const DEFAULT_SETTINGS: KeyValueListPluginSettings = {
+  bullet: "-",
+  displayBullet: true,
   delimiter: ":",
   displayDelimiter: true,
   maxKeyWidth: 50,
@@ -51,6 +55,33 @@ export class SettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
+
+    new Setting(containerEl)
+      .setName("Bullet")
+      .setDesc("The character(s) that indicates a list item")
+      .addText((text: TextComponent) =>
+        text
+          .setPlaceholder(":")
+          .setValue(this.plugin.settings.bullet)
+          .onChange(async (value) => {
+            this.plugin.settings.bullet = value;
+            await this.plugin.saveSettings();
+            this.plugin.refresh();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Display bullet")
+      .setDesc("If the bullet should be displayed or not")
+      .addToggle((toggle: ToggleComponent) =>
+        toggle
+          .setValue(this.plugin.settings.displayBullet)
+          .onChange(async (value) => {
+            this.plugin.settings.displayBullet = value;
+            await this.plugin.saveData(this.plugin.settings);
+            this.plugin.refresh();
+          })
+      );
 
     new Setting(containerEl)
       .setName("Delimiter")

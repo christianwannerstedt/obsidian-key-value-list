@@ -1,5 +1,6 @@
 import { Plugin } from "obsidian";
 import { KeyValueList } from "src/key-value-list";
+
 import {
   DEFAULT_SETTINGS,
   KeyValueListPluginSettings,

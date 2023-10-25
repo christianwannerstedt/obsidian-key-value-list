@@ -1,7 +1,7 @@
-// import { Plugin_2 } from "obsidian";
-
-import { syntaxTree, SyntaxNodeRef } from "@codemirror/language";
+import { Line } from "@codemirror/language";
 import { RangeSetBuilder } from "@codemirror/state";
+import { EditorPosition, MarkdownView } from "obsidian";
+
 import {
   Decoration,
   DecorationSet,
@@ -111,6 +111,10 @@ export class KeyValueList {
 
           buildDecorations(view: EditorView, lists: List[]): DecorationSet {
             const builder = new RangeSetBuilder<Decoration>();
+            if (!this.editor) {
+              return builder.finish();
+            }
+            const cursor: EditorPosition = this.editor.getCursor();
 
             const listWidths = this.listWidths;
             view.requestMeasure({
@@ -152,47 +156,35 @@ export class KeyValueList {
 
             const maxKeyWidth: number =
               (plugin.settings.maxKeyWidth / 100) * view.dom.clientWidth;
-            const padding: string = `${plugin.settings.verticalPadding}px ${plugin.settings.horizontalPadding}px`;
+            const markdownView =
+              plugin.app.workspace.getActiveViewOfType(MarkdownView);
 
             lists.forEach((list: List, index: number) => {
-              const cursor = this.editor.getCursor();
-              const from = this.editor.posToOffset(list.start);
-              const to = this.editor.posToOffset(list.end);
-
-              let listIndex = 0;
-              syntaxTree(view.state).iterate({
-                from,
-                to,
-                enter(node: SyntaxNodeRef) {
-                  listIndex++;
-                  const nodeLine = view.state.doc.lineAt(node.from);
-                  if (
-                    node.type.name.startsWith("list") &&
-                    nodeLine.number != cursor.line + 1
-                  ) {
-                    let substring: string = view.state.doc.sliceString(
-                      node.from,
-                      node.to
-                    );
-                    builder.add(
-                      node.from - 2,
-                      node.to,
-                      Decoration.replace({
-                        widget: new KeyValueLineWidget(
-                          plugin,
-                          maxKeyWidth,
-                          padding,
-                          index,
-                          substring,
-                          // listWidth,
-                          listWidths[index],
-                          listIndex
-                        ),
-                      })
-                    );
-                  }
-                },
-              });
+              for (
+                let lineNumber: number = list.start.line;
+                lineNumber < list.end.line;
+                lineNumber++
+              ) {
+                if (lineNumber === cursor.line) {
+                  continue;
+                }
+                const line: Line = view.state.doc.line(lineNumber + 1);
+                builder.add(
+                  line.from,
+                  line.to,
+                  Decoration.replace({
+                    widget: new KeyValueLineWidget(
+                      plugin,
+                      index,
+                      lineNumber,
+                      line.text,
+                      maxKeyWidth,
+                      listWidths[index],
+                      markdownView?.file?.path || ""
+                    ),
+                  })
+                );
+              }
             });
 
             return builder.finish();

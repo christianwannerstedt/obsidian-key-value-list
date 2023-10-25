@@ -14,3 +14,8 @@
 .kvl-row.kvl-row-even.striped {
     background-color: var(--background-secondary);
 }
+
+.kvl-key-inner > p,
+.kvl-value > p {
+    margin: 0;
+}
