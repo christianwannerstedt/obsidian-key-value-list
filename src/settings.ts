@@ -29,12 +29,12 @@ export interface KeyValueListPluginSettings {
 
 export const DEFAULT_SETTINGS: KeyValueListPluginSettings = {
   bullet: "-",
-  displayBullet: true,
+  displayBullet: false,
   delimiter: ":",
   displayDelimiter: true,
   maxKeyWidth: 50,
-  verticalPadding: 4,
-  horizontalPadding: 10,
+  verticalPadding: 3,
+  horizontalPadding: 12,
   boldKey: true,
   stripedBackgroundType: "default",
   stripedBackgroundColor: "",
@@ -61,7 +61,7 @@ export class SettingTab extends PluginSettingTab {
       .setDesc("The character(s) that indicates a list item")
       .addText((text: TextComponent) =>
         text
-          .setPlaceholder(":")
+          .setPlaceholder(DEFAULT_SETTINGS.bullet)
           .setValue(this.plugin.settings.bullet)
           .onChange(async (value) => {
             this.plugin.settings.bullet = value;
@@ -88,7 +88,7 @@ export class SettingTab extends PluginSettingTab {
       .setDesc("The character(s) that separate the key from the value")
       .addText((text: TextComponent) =>
         text
-          .setPlaceholder(":")
+          .setPlaceholder(DEFAULT_SETTINGS.delimiter)
           .setValue(this.plugin.settings.delimiter)
           .onChange(async (value) => {
             this.plugin.settings.delimiter = value;
@@ -132,7 +132,7 @@ export class SettingTab extends PluginSettingTab {
       .setDesc("Vertical padding of the key-value list rows (in pixels)")
       .addText((text: TextComponent) =>
         text
-          .setPlaceholder("4")
+          .setPlaceholder(DEFAULT_SETTINGS.verticalPadding.toString())
           .setValue(this.plugin.settings.verticalPadding?.toString())
           .onChange(async (value) => {
             let numericValue = parseInt(value);
@@ -151,7 +151,7 @@ export class SettingTab extends PluginSettingTab {
       .setDesc("Horizontal padding of the key-value list rows (in pixels)")
       .addText((text: TextComponent) =>
         text
-          .setPlaceholder("4")
+          .setPlaceholder(DEFAULT_SETTINGS.horizontalPadding.toString())
           .setValue(this.plugin.settings.horizontalPadding?.toString())
           .onChange(async (value) => {
             let numericValue = parseInt(value);

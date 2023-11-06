@@ -2,21 +2,29 @@ import { Editor } from "obsidian";
 import { List } from "./list";
 import KeyValueListPlugin from "./main";
 import { escapeRegExp } from "./utils";
+import { DEFAULT_SETTINGS } from "./settings";
 
 const listItemReg = new RegExp(`^[ \t]*(?:[-*+]|\\d+\\.)( |\t)`);
 
 export class ListParser {
   keyValueReg: RegExp;
+  needsUpdate: boolean = false;
 
   constructor(private plugin: KeyValueListPlugin) {
     this.update();
   }
 
   update() {
-    const delimiter: string = escapeRegExp(
-      this.plugin.settings.delimiter || ": "
+    const bullet: string = escapeRegExp(
+      this.plugin.settings.bullet || DEFAULT_SETTINGS.bullet
     );
-    this.keyValueReg = new RegExp(`^[ \t]*(?:[-*+])( |\t)(.*)${delimiter}(.*)`);
+    const delimiter: string = escapeRegExp(
+      this.plugin.settings.delimiter || DEFAULT_SETTINGS.delimiter
+    );
+    this.keyValueReg = new RegExp(
+      `^[ \t]*${bullet}(?![ \t]*[-*+])( |\t)(.*)${delimiter}(.*)`
+    );
+    this.needsUpdate = true;
   }
 
   /**

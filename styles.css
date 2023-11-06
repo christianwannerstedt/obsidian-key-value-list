@@ -15,7 +15,8 @@
     background-color: var(--background-secondary);
 }
 
-.kvl-key-inner > p,
-.kvl-value > p {
+.kvl-key-inner > *,
+.kvl-value > * {
+    display: inline;
     margin: 0;
 }
