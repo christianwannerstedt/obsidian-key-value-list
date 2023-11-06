@@ -17,10 +17,16 @@ export class KeyValueLineWidget extends WidgetType {
     super();
   }
 
-  // eq(other: TestWidget) {
-  // 	// console.log("EQ: ", this.value, "==", other.value);
-  // 	return other.value == this.value;
-  // }
+  eq(other: KeyValueLineWidget) {
+    return (
+      this.listId === other.listId &&
+      this.listIndex === other.listIndex &&
+      this.textLine === other.textLine &&
+      this.maxKeyWidth === other.maxKeyWidth &&
+      this.listItemWidth === other.listItemWidth &&
+      this.path === other.path
+    );
+  }
 
   toDOM() {
     const settings: KeyValueListPluginSettings = this.plugin.settings;
