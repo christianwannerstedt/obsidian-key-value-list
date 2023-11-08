@@ -1,10 +1,10 @@
 {
-	"id": "key-value-list",
-	"name": "Key Value List",
-	"version": "0.1.0",
-	"minAppVersion": "0.15.0",
-	"description": "Makes it easy to turn lists into formatted key value lists.",
-	"author": "Christian Wannerstedt",
-	"authorUrl": "https://github.com/christianwannerstedt",
-	"isDesktopOnly": false
+  "id": "key-value-list",
+  "name": "Key Value List",
+  "version": "0.1.0",
+  "minAppVersion": "0.15.0",
+  "description": "Makes it easy to turn lists into formatted key-value lists.",
+  "author": "Christian Wannerstedt",
+  "authorUrl": "https://github.com/christianwannerstedt",
+  "isDesktopOnly": false
 }

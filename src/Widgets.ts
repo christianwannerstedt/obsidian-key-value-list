@@ -34,9 +34,7 @@ export class KeyValueLineWidget extends WidgetType {
     const delimiter: string = settings.delimiter || ":";
     const isEven: boolean = this.listIndex % 2 == 0;
     const split: number = this.textLine.indexOf(delimiter);
-    const key: string = `${
-      settings.displayBullet ? `\\${bullet} ` : ""
-    } ${this.textLine
+    const key = `${settings.displayBullet ? `\\${bullet} ` : ""} ${this.textLine
       .substring(
         bullet.length + 1,
         split + (settings.displayDelimiter ? delimiter.length : 0)
@@ -64,13 +62,15 @@ export class KeyValueLineWidget extends WidgetType {
     rowInner.className = `kvl-row-inner kvl-row-inner-${this.listId}`;
 
     // Key
-    let keySpan = document.createElement(settings.boldKey ? "strong" : "span");
+    const keySpan = document.createElement(
+      settings.boldKey ? "strong" : "span"
+    );
     keySpan.className = `kvl-key kvl-key-${this.listId}`;
     if (this.listItemWidth.key) {
       keySpan.style.minWidth = `${this.listItemWidth.key}px`;
     }
 
-    let keySpanInner = document.createElement("span");
+    const keySpanInner = document.createElement("span");
     if (this.maxKeyWidth > 0) {
       keySpanInner.style.maxWidth = `${this.maxKeyWidth}px`;
     }
@@ -81,7 +81,7 @@ export class KeyValueLineWidget extends WidgetType {
     this.renderMarkdown(key, keySpanInner);
 
     // Value
-    let valueSpan = document.createElement("span");
+    const valueSpan = document.createElement("span");
     valueSpan.className = "kvl-value";
     if (settings.isValueColored) {
       valueSpan.style.color = settings.valueColor;

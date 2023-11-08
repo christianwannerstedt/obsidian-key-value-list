@@ -8,7 +8,7 @@ const listItemReg = new RegExp(`^[ \t]*(?:[-*+]|\\d+\\.)( |\t)`);
 
 export class ListParser {
   keyValueReg: RegExp;
-  needsUpdate: boolean = false;
+  needsUpdate = false;
 
   constructor(private plugin: KeyValueListPlugin) {
     this.update();
@@ -37,7 +37,7 @@ export class ListParser {
    */
   collectLists(
     editor: Editor,
-    startLine: number = 0,
+    startLine = 0,
     endLine: number = editor.lastLine()
   ): List[] {
     const lists: List[] = [];
@@ -50,11 +50,10 @@ export class ListParser {
     ) {
       const line = editor.getLine(currentLine);
       if (this.isLineList(line)) {
-        let isKeyValueList: boolean = true;
-        let hasCursorInside: boolean = false;
-        let listStartLine: number = currentLine;
+        let isKeyValueList = true;
+        let hasCursorInside = false;
 
-        let listEndLineLookup: number = listStartLine;
+        let listEndLineLookup: number = currentLine;
         while (listEndLineLookup <= editor.lastLine()) {
           const line = editor.getLine(listEndLineLookup);
           // Check if the line is a list item
@@ -81,7 +80,7 @@ export class ListParser {
         }
         lists.push(
           new List(
-            { line: listStartLine, ch: 0 },
+            { line: currentLine, ch: 0 },
             {
               line: listEndLineLookup,
               ch: editor.getLine(listEndLineLookup).length,
