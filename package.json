@@ -1,6 +1,6 @@
 {
   "name": "key-value-list",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Makes it easy to turn lists into formatted key-value lists.",
   "main": "main.js",
   "scripts": {
