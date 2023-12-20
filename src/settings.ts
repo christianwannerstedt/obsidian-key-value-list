@@ -11,7 +11,8 @@ import {
 import KeyValueListPlugin from "./main";
 
 export interface KeyValueListPluginSettings {
-  bullet: string;
+  activeInEditMode: boolean;
+  activeInReadMode: boolean;
   displayBullet: boolean;
   delimiter: string;
   displayDelimiter: boolean;
@@ -28,7 +29,8 @@ export interface KeyValueListPluginSettings {
 }
 
 export const DEFAULT_SETTINGS: KeyValueListPluginSettings = {
-  bullet: "-",
+  activeInEditMode: true,
+  activeInReadMode: true,
   displayBullet: false,
   delimiter: ":",
   displayDelimiter: true,
@@ -55,6 +57,32 @@ export class SettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
+
+    new Setting(containerEl)
+      .setName("Active in edit mode")
+      .setDesc("If the plugin should be active in edit mode")
+      .addToggle((toggle: ToggleComponent) =>
+        toggle
+          .setValue(this.plugin.settings.activeInEditMode)
+          .onChange(async (value) => {
+            this.plugin.settings.activeInEditMode = value;
+            await this.plugin.saveData(this.plugin.settings);
+            this.plugin.refresh();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Active in read mode")
+      .setDesc("If the plugin should be active in read mode")
+      .addToggle((toggle: ToggleComponent) =>
+        toggle
+          .setValue(this.plugin.settings.activeInReadMode)
+          .onChange(async (value) => {
+            this.plugin.settings.activeInReadMode = value;
+            await this.plugin.saveData(this.plugin.settings);
+            this.plugin.refresh();
+          })
+      );
 
     new Setting(containerEl)
       .setName("Display bullet")

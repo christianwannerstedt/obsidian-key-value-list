@@ -26,6 +26,8 @@ export class KeyValueList {
 
     // Register a Markdown post processor to handle read mode.
     this.plugin.registerMarkdownPostProcessor((element, context) => {
+      if (!this.plugin.settings.activeInReadMode) return;
+
       const listElements = element.findAll("ul");
 
       for (let listElement of listElements) {
@@ -134,6 +136,8 @@ export class KeyValueList {
           };
 
           update(update: ViewUpdate) {
+            if (!plugin.settings.activeInEditMode) return;
+
             // Collect all lists in the current viewport.
             const lists: List[] =
               this.view.viewportLineBlocks.length > 0 &&
@@ -272,7 +276,10 @@ export class KeyValueList {
           }
         },
         {
-          decorations: (value) => value.decorations,
+          decorations: (value) =>
+            plugin.settings.activeInEditMode
+              ? value.decorations
+              : Decoration.none,
         }
       )
     );
