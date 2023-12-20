@@ -28,7 +28,7 @@ If the value (or key) is too long to fit on the row, it will be properly wrapped
 It is possible to use other formats, e.g. bold text, links, tags, in both the key and value part.
 
 ## Customization
-Even if the plugin doesn't require any customizations at all, you can fine tune it a bit with some available settings. From the plugin settings page it's possible to change the trigger bullet, delimiter, appearence etc.
+Even if the plugin doesn't require any customizations at all, you can fine tune it a bit with some available settings. From the plugin settings page it's possible to change the delimiter, appearence etc.
 
 ![Settings preview](https://github.com/christianwannerstedt/obsidian-key-value-list/assets/25314/acf39c55-9471-4e71-97ac-99e14eea36d0)
 
@@ -41,3 +41,11 @@ After a list has been edited, there is a possibility that there may be a one-ren
 
 ### Manual installation
 Unzip the [latest release](https://github.com/christianwannerstedt/obsidian-key-value-list/releases/latest) into your `<vault>/.obsidian/plugins/` folder.
+
+### Within Obsidian
+1. Go to `Settings > Community plugins`
+2. Ensure that Safe mode is turned off
+3. Click `Community plugins > Browse`
+4. Search for `Key-Value list`
+5. Click install
+6. Once installed, close the community plugins window and activate the newly installed plugin
