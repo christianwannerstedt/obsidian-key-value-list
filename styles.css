@@ -20,3 +20,12 @@
     display: inline;
     margin: 0;
 }
+
+.kvl-table,
+.kvl-table td {
+    border: 0 !important;
+}
+
+.kvl-table tr.kvl-row-even {
+    background-color: var(--background-secondary);   
+}
