@@ -30,7 +30,7 @@ export class KeyValueLineWidget extends WidgetType {
 
   toDOM() {
     const settings: KeyValueListPluginSettings = this.plugin.settings;
-    const bullet: string = settings.bullet || "-";
+    const bullet: string = "-";
     const delimiter: string = settings.delimiter || ":";
     const isEven: boolean = this.listIndex % 2 == 0;
     const split: number = this.textLine.indexOf(delimiter);

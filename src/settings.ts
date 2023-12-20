@@ -57,20 +57,6 @@ export class SettingTab extends PluginSettingTab {
     containerEl.empty();
 
     new Setting(containerEl)
-      .setName("Bullet")
-      .setDesc("The character(s) that indicates a list item")
-      .addText((text: TextComponent) =>
-        text
-          .setPlaceholder(DEFAULT_SETTINGS.bullet)
-          .setValue(this.plugin.settings.bullet)
-          .onChange(async (value) => {
-            this.plugin.settings.bullet = value;
-            await this.plugin.saveSettings();
-            this.plugin.refresh();
-          })
-      );
-
-    new Setting(containerEl)
       .setName("Display bullet")
       .setDesc("If the bullet should be displayed or not")
       .addToggle((toggle: ToggleComponent) =>
@@ -193,7 +179,6 @@ export class SettingTab extends PluginSettingTab {
         });
         dropdown.setValue(this.plugin.settings.stripedBackgroundType);
         dropdown.onChange(async (value) => {
-          console.log(value);
           this.plugin.settings.stripedBackgroundType = value;
           await this.plugin.saveData(this.plugin.settings);
           this.display();
