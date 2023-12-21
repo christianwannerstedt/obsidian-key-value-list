@@ -30,7 +30,7 @@ export class KeyValueList {
 
       const listElements = element.findAll("ul");
 
-      for (let listElement of listElements) {
+      for (const listElement of listElements) {
         const listItems = listElement.findAll("li");
         const isKeyValueList = listItems.every((listItem) =>
           parser.isKeyValueLiElem(listItem.innerText.trim())
@@ -42,7 +42,7 @@ export class KeyValueList {
           table.classList.add("kvl-table");
           listElement.replaceWith(table);
           let rowIndex = 0;
-          for (let listItem of listItems) {
+          for (const listItem of listItems) {
             const tr = document.createElement("tr");
 
             // Every other row should have a different background color.

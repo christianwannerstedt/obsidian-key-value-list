@@ -16,7 +16,7 @@ export class ListParser {
   }
 
   update() {
-    const bullet: string = "-";
+    const bullet = "-";
     const delimiter: string = escapeRegExp(
       this.plugin.settings.delimiter || DEFAULT_SETTINGS.delimiter
     );
