@@ -8,6 +8,7 @@ const listItemReg = new RegExp(`^[ \t]*(?:[-*+]|\\d+\\.)( |\t)`);
 
 export class ListParser {
   keyValueReg: RegExp;
+  liElemReg: RegExp;
   needsUpdate = false;
 
   constructor(private plugin: KeyValueListPlugin) {
@@ -15,15 +16,14 @@ export class ListParser {
   }
 
   update() {
-    const bullet: string = escapeRegExp(
-      this.plugin.settings.bullet || DEFAULT_SETTINGS.bullet
-    );
+    const bullet = "-";
     const delimiter: string = escapeRegExp(
       this.plugin.settings.delimiter || DEFAULT_SETTINGS.delimiter
     );
     this.keyValueReg = new RegExp(
-      `^[ \t]*${bullet}(?![ \t]*[-*+])( |\t)(.*)${delimiter}(.*)`
+      `^[ \t]*${bullet}(?![ \t]*[-*+])( |\t)(.*)${delimiter} (.*)`
     );
+    this.liElemReg = new RegExp(`^(.*)${delimiter} (.*)`);
     this.needsUpdate = true;
   }
 
@@ -98,6 +98,18 @@ export class ListParser {
 
   private isLineList(line: string) {
     return listItemReg.test(line);
+  }
+
+  public isKeyValueLiElem(line: string) {
+    return this.liElemReg.test(line);
+  }
+
+  public getKeyFromLiElem(line: string): string {
+    return line.match(this.liElemReg)?.[1] || "";
+  }
+
+  public getValueFromLiElem(line: string): string {
+    return line.match(this.liElemReg)?.[2] || "";
   }
 
   private isKeyValueListItem(line: string): boolean {

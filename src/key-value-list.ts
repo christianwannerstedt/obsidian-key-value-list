@@ -24,6 +24,87 @@ export class KeyValueList {
     const plugin: KeyValueListPlugin = this.plugin;
     const parser: ListParser = this.parser;
 
+    // Register a Markdown post processor to handle read mode.
+    this.plugin.registerMarkdownPostProcessor((element, context) => {
+      if (!this.plugin.settings.activeInReadMode) return;
+
+      const listElements = element.findAll("ul");
+
+      for (const listElement of listElements) {
+        const listItems = listElement.findAll("li");
+        const isKeyValueList = listItems.every((listItem) =>
+          parser.isKeyValueLiElem(listItem.innerText.trim())
+        );
+
+        if (isKeyValueList) {
+          // Replace the list with a table where every row is a list item, and the first column is the key and the second column is the value.
+          const table = document.createElement("table");
+          table.classList.add("kvl-table");
+          listElement.replaceWith(table);
+          let rowIndex = 0;
+          for (const listItem of listItems) {
+            const tr = document.createElement("tr");
+
+            // Every other row should have a different background color.
+            if (++rowIndex % 2 == 0) {
+              // Set the background color to the stripedBackgroundColor setting
+              if (
+                plugin.settings.stripedBackgroundType === "custom" &&
+                plugin.settings.stripedBackgroundColor
+              ) {
+                tr.style.backgroundColor =
+                  plugin.settings.stripedBackgroundColor;
+              }
+              tr.classList.add("kvl-row-even");
+            } else {
+              tr.classList.add("kvl-row-odd");
+            }
+
+            table.appendChild(tr);
+            const tdKey = document.createElement("td");
+            tr.appendChild(tdKey);
+
+            let keyText = parser.getKeyFromLiElem(listItem.innerText.trim());
+            // Include the delimiter if the settings.displayDelimiter is true.
+            if (plugin.settings.displayDelimiter) {
+              keyText += plugin.settings.delimiter;
+            }
+            // Include the bullet if the settings.displayBullet is true.
+            if (plugin.settings.displayBullet) {
+              keyText = `- ${keyText}`;
+            }
+
+            // If the settings.boldKey is true, wrap the key in a strong tag.
+            const keyElemType: string = plugin.settings.boldKey
+              ? "strong"
+              : "span";
+            const keyElem = document.createElement(keyElemType);
+            keyElem.innerText = keyText;
+            if (plugin.settings.isKeyColored) {
+              keyElem.style.color = plugin.settings.keyColor;
+            }
+            tdKey.style.padding = `${plugin.settings.verticalPadding + 2}px ${
+              plugin.settings.horizontalPadding
+            }px`;
+            tdKey.appendChild(keyElem);
+
+            const tdValue = document.createElement("td");
+            tdValue.innerText = parser.getValueFromLiElem(
+              listItem.innerText.trim()
+            );
+            tdValue.style.padding = `${plugin.settings.verticalPadding + 2}px ${
+              plugin.settings.horizontalPadding
+            }px`;
+            if (plugin.settings.isValueColored) {
+              tdValue.style.color = plugin.settings.valueColor;
+            }
+            tr.appendChild(tdValue);
+          }
+        }
+      }
+    });
+
+    // Register a CodeMirror view plugin to handle edit mode.
     this.plugin.registerEditorExtension(
       ViewPlugin.fromClass(
         class KVLPlugin implements PluginValue {
@@ -55,6 +136,8 @@ export class KeyValueList {
           };
 
           update(update: ViewUpdate) {
+            if (!plugin.settings.activeInEditMode) return;
+
             // Collect all lists in the current viewport.
             const lists: List[] =
               this.view.viewportLineBlocks.length > 0 &&
@@ -193,7 +276,10 @@ export class KeyValueList {
           }
         },
         {
-          decorations: (value) => value.decorations,
+          decorations: (value) =>
+            plugin.settings.activeInEditMode
+              ? value.decorations
+              : Decoration.none,
         }
       )
     );

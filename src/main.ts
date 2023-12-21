@@ -1,4 +1,4 @@
-import { Plugin } from "obsidian";
+import { MarkdownView, Plugin } from "obsidian";
 import { KeyValueList } from "src/key-value-list";
 
 import {
@@ -24,6 +24,12 @@ export default class KeyValueListPlugin extends Plugin {
   refresh() {
     this.app.workspace.updateOptions();
     this.parser.update();
+    // Trigger a re-render of the current note when the settings change
+    // to force the registerMarkdownPostProcessor to reprocess the Markdown.
+    const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+    if (view) {
+      view.previewMode.rerender(true);
+    }
   }
 
   onunload() {}
