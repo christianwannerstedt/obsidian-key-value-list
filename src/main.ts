@@ -19,17 +19,27 @@ export default class KeyValueListPlugin extends Plugin {
 
     // Add a settings tab
     this.addSettingTab(new SettingTab(this.app, this));
+
+    this.registerEvent(
+      this.app.metadataCache.on("changed", () => {
+        this.renderPreviewMode();
+      })
+    );
   }
 
-  refresh() {
-    this.app.workspace.updateOptions();
-    this.parser.update();
+  renderPreviewMode() {
     // Trigger a re-render of the current note when the settings change
     // to force the registerMarkdownPostProcessor to reprocess the Markdown.
     const view = this.app.workspace.getActiveViewOfType(MarkdownView);
     if (view) {
       view.previewMode.rerender(true);
     }
+  }
+
+  refresh() {
+    this.app.workspace.updateOptions();
+    this.parser.update();
+    this.renderPreviewMode();
   }
 
   onunload() {}
