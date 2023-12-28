@@ -155,8 +155,10 @@ export class KeyValueList {
             if (
               !plugin.settings.activeInEditMode ||
               excludeFileFromCssClasses(plugin)
-            )
+            ) {
+              this.decorations = Decoration.none;
               return;
+            }
 
             // Collect all lists in the current viewport.
             const lists: List[] =
@@ -253,7 +255,7 @@ export class KeyValueList {
 
           buildDecorations(view: EditorView, lists: List[]): DecorationSet {
             const builder = new RangeSetBuilder<Decoration>();
-            if (!this.editor) {
+            if (!this.editor || excludeFileFromCssClasses(plugin)) {
               return builder.finish();
             }
             const cursor: EditorPosition = this.editor.getCursor();
