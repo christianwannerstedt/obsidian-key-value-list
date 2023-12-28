@@ -153,6 +153,7 @@ export class KeyValueList {
 
           update(update: ViewUpdate) {
             if (
+              !this.editor ||
               !plugin.settings.activeInEditMode ||
               excludeFileFromCssClasses(plugin)
             ) {
