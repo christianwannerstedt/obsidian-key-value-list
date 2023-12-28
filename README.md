@@ -32,6 +32,9 @@ Even if the plugin doesn't require any customizations at all, you can fine tune 
 
 ![Settings preview](https://github.com/christianwannerstedt/obsidian-key-value-list/assets/25314/acf39c55-9471-4e71-97ac-99e14eea36d0)
 
+### File specific settings
+It is possible to choose whether the plugin should be active for individual files by using the frontmatter property `cssclasses`. Any files that contain the `nokeyvalue` class will be ignored by the plugin.
+
 ## Notes
 In order for a list to be considered a Key-Value list by this plugin, EVERY row, must contain a key value pair. If one or more rows don't contain a key-value pair, the list will be ignored by the plugin.
 
