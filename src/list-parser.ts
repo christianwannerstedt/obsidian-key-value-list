@@ -4,7 +4,7 @@ import KeyValueListPlugin from "./main";
 import { escapeRegExp } from "./utils";
 import { DEFAULT_SETTINGS } from "./settings";
 
-const listItemReg = new RegExp(`^[ \t]*(?:[-*+]|\\d+\\.)( |\t)`);
+const listItemReg = new RegExp(`^[ \t]*-(?![ \t]*[-*+])(.*)`);
 
 export class ListParser {
   keyValueReg: RegExp;

@@ -1,6 +1,6 @@
 import { Line } from "@codemirror/language";
 import { RangeSetBuilder } from "@codemirror/state";
-import { EditorPosition, MarkdownView } from "obsidian";
+import { EditorPosition, MarkdownView, TFile } from "obsidian";
 
 import {
   Decoration,
@@ -17,6 +17,17 @@ import { ListItemWidth } from "./types";
 import { KeyValueLineWidget } from "./widgets";
 import { ListParser } from "./list-parser";
 
+const excludeFileFromCssClasses = (plugin: KeyValueListPlugin) => {
+  const noteFile: TFile | null = plugin.app.workspace.getActiveFile();
+  if (noteFile) {
+    const metadata = plugin.app.metadataCache.getFileCache(noteFile);
+    if (metadata?.frontmatter) {
+      return (metadata.frontmatter.cssclasses || []).includes("nokeyvalue");
+    }
+  }
+  return false;
+};
+
 export class KeyValueList {
   constructor(private plugin: KeyValueListPlugin, private parser: ListParser) {}
 
@@ -26,7 +37,12 @@ export class KeyValueList {
 
     // Register a Markdown post processor to handle read mode.
     this.plugin.registerMarkdownPostProcessor((element, context) => {
-      if (!this.plugin.settings.activeInReadMode) return;
+      if (
+        !this.plugin.settings.activeInReadMode ||
+        excludeFileFromCssClasses(plugin)
+      ) {
+        return;
+      }
 
       const listElements = element.findAll("ul");
 
@@ -136,7 +152,14 @@ export class KeyValueList {
           };
 
           update(update: ViewUpdate) {
-            if (!plugin.settings.activeInEditMode) return;
+            if (
+              !this.editor ||
+              !plugin.settings.activeInEditMode ||
+              excludeFileFromCssClasses(plugin)
+            ) {
+              this.decorations = Decoration.none;
+              return;
+            }
 
             // Collect all lists in the current viewport.
             const lists: List[] =
@@ -233,7 +256,7 @@ export class KeyValueList {
 
           buildDecorations(view: EditorView, lists: List[]): DecorationSet {
             const builder = new RangeSetBuilder<Decoration>();
-            if (!this.editor) {
+            if (!this.editor || excludeFileFromCssClasses(plugin)) {
               return builder.finish();
             }
             const cursor: EditorPosition = this.editor.getCursor();
@@ -277,7 +300,8 @@ export class KeyValueList {
         },
         {
           decorations: (value) =>
-            plugin.settings.activeInEditMode
+            plugin.settings.activeInEditMode &&
+            !excludeFileFromCssClasses(plugin)
               ? value.decorations
               : Decoration.none,
         }
