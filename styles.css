@@ -29,3 +29,13 @@
 .kvl-table tr.kvl-row-even {
     background-color: var(--background-secondary);   
 }
+
+.setting-item.foldable-setting {
+    transition: all .5s ease-out;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+.setting-item.foldable-setting.disabled {
+    height: 0;
+    padding: 0;
+}
