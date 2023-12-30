@@ -31,10 +31,13 @@ export class KeyValueLineWidget extends WidgetType {
   toDOM() {
     const settings: KeyValueListPluginSettings = this.plugin.settings;
     const bullet = "-";
+    const displayBulletChar: string = settings.displayBulletChar || "-";
     const delimiter: string = settings.delimiter || ":";
     const isEven: boolean = this.listIndex % 2 == 0;
     const split: number = this.textLine.indexOf(delimiter);
-    const key = `${settings.displayBullet ? `\\${bullet} ` : ""} ${this.textLine
+    const key = `${
+      settings.displayBullet ? `\\${displayBulletChar} ` : ""
+    } ${this.textLine
       .substring(
         bullet.length + 1,
         split + (settings.displayDelimiter ? delimiter.length : 0)

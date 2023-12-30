@@ -45,6 +45,8 @@ export class KeyValueList {
       }
 
       const listElements = element.findAll("ul");
+      const displayBulletChar: string =
+        plugin.settings.displayBulletChar || "-";
 
       for (const listElement of listElements) {
         const listItems = listElement.findAll("li");
@@ -87,7 +89,7 @@ export class KeyValueList {
             }
             // Include the bullet if the settings.displayBullet is true.
             if (plugin.settings.displayBullet) {
-              keyText = `- ${keyText}`;
+              keyText = `${displayBulletChar} ${keyText}`;
             }
 
             // If the settings.boldKey is true, wrap the key in a strong tag.
