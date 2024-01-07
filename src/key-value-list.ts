@@ -107,8 +107,8 @@ export class KeyValueList {
             tdKey.appendChild(keyElem);
 
             const tdValue = document.createElement("td");
-            tdValue.innerText = parser.getValueFromLiElem(
-              listItem.innerText.trim()
+            tdValue.innerHTML = parser.getValueFromLiElem(
+              listItem.innerHTML.trim()
             );
             tdValue.style.padding = `${plugin.settings.verticalPadding + 2}px ${
               plugin.settings.horizontalPadding
