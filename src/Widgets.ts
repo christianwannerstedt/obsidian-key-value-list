@@ -43,7 +43,7 @@ export class KeyValueLineWidget extends WidgetType {
         split + (settings.displayDelimiter ? delimiter.length : 0)
       )
       .trim()}`;
-    const value: string = this.textLine
+    let value: string = this.textLine
       .substring(split + delimiter.length)
       .trim();
 
@@ -89,6 +89,11 @@ export class KeyValueLineWidget extends WidgetType {
     if (settings.isValueColored) {
       valueSpan.style.color = settings.valueColor;
     }
+
+    // Escape any footnotes in the value. A foot note is a number after the ^ symbol in square brackets.
+    // Example: This is a footnote[^1]
+    value = value.replace(/\[(\^\d+)\]/g, "\\$1");
+
     this.renderMarkdown(value, valueSpan);
 
     row.appendChild(rowInner);
