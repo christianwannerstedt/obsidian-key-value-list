@@ -4,7 +4,7 @@ import KeyValueListPlugin from "./main";
 import { escapeRegExp } from "./utils";
 import { DEFAULT_SETTINGS } from "./settings";
 
-const listItemReg = new RegExp(`^[ \t]*-(?![ \t]*[-*+])(.*)`);
+const listItemReg = new RegExp(`^[ \t]*-(.*)`);
 
 export class ListParser {
   keyValueReg: RegExp;
@@ -20,9 +20,7 @@ export class ListParser {
     const delimiter: string = escapeRegExp(
       this.plugin.settings.delimiter || DEFAULT_SETTINGS.delimiter
     );
-    this.keyValueReg = new RegExp(
-      `^[ \t]*${bullet}(?![ \t]*[-*+])( |\t)(.*)${delimiter} (.*)`
-    );
+    this.keyValueReg = new RegExp(`^[ \t]*${bullet}(.*)${delimiter} (.*)`);
     this.liElemReg = new RegExp(`^(.*)${delimiter} (.*)`);
     this.needsUpdate = true;
   }

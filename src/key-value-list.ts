@@ -82,7 +82,7 @@ export class KeyValueList {
             const tdKey = document.createElement("td");
             tr.appendChild(tdKey);
 
-            let keyText = parser.getKeyFromLiElem(listItem.innerText.trim());
+            let keyText = parser.getKeyFromLiElem(listItem.innerHTML.trim());
             // Include the delimiter if the settings.displayDelimiter is true.
             if (plugin.settings.displayDelimiter) {
               keyText += plugin.settings.delimiter;
@@ -97,7 +97,7 @@ export class KeyValueList {
               ? "strong"
               : "span";
             const keyElem = document.createElement(keyElemType);
-            keyElem.innerText = keyText;
+            keyElem.innerHTML = keyText;
             if (plugin.settings.isKeyColored) {
               keyElem.style.color = plugin.settings.keyColor;
             }
@@ -144,7 +144,15 @@ export class KeyValueList {
           }
 
           private setupEditor = () => {
-            const editor = this.view.state.field(editorInfoField)?.editor;
+            const field = this.view.state.field(editorInfoField);
+            // Get the editor from the field but catch any type errors here
+            // because the editor is not available immediately.
+            let editor;
+            try {
+              editor = field.editor;
+            } catch (error) {
+              editor = undefined;
+            }
             if (!editor) {
               setTimeout(this.setupEditor, 0);
               return;
