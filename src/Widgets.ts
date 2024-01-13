@@ -35,14 +35,22 @@ export class KeyValueLineWidget extends WidgetType {
     const delimiter: string = settings.delimiter || ":";
     const isEven: boolean = this.listIndex % 2 == 0;
     const split: number = this.textLine.indexOf(delimiter);
-    const key = `${
+    let key = `${
       settings.displayBullet ? `\\${displayBulletChar} ` : ""
-    } ${this.textLine
+    }${this.textLine
       .substring(
         bullet.length + 1,
         split + (settings.displayDelimiter ? delimiter.length : 0)
       )
       .trim()}`;
+
+    // We need to handle rows starting with a checkbox
+    if (!settings.displayBullet && key.charAt(0) === "[") {
+      key = `- ${key}`;
+    } else if (settings.displayBullet && key.startsWith("\\- [")) {
+      key = key.substring(1);
+    }
+
     let value: string = this.textLine
       .substring(split + delimiter.length)
       .trim();
