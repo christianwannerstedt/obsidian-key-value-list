@@ -122,6 +122,16 @@ export class KeyValueList {
       }
     });
 
+    // Keep track of the pointer state. We're avoiding updates when it's down,
+    // since that prevents link clicks to work properly in edit mode.
+    let isPointerDown: boolean = false;
+    this.plugin.registerDomEvent(window, "pointerdown", () => {
+      isPointerDown = true;
+    });
+    this.plugin.registerDomEvent(window, "pointerup", () => {
+      isPointerDown = false;
+    });
+
     // Register a CodeMirror view plugin to handle edit mode.
     this.plugin.registerEditorExtension(
       ViewPlugin.fromClass(
@@ -162,6 +172,8 @@ export class KeyValueList {
           };
 
           update(update: ViewUpdate) {
+            if (isPointerDown) return;
+
             if (
               !this.editor ||
               !plugin.settings.activeInEditMode ||
