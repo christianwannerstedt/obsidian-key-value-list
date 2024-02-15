@@ -20,8 +20,10 @@ export class ListParser {
     const delimiter: string = escapeRegExp(
       this.plugin.settings.delimiter || DEFAULT_SETTINGS.delimiter
     );
-    this.keyValueReg = new RegExp(`^[ \t]*${bullet}(.*)${delimiter} (.*)`);
-    this.liElemReg = new RegExp(`^(.*)${delimiter} (.*)`);
+    this.keyValueReg = new RegExp(
+      `^[ \t]*${bullet}(.*)[^${delimiter}]${delimiter} (.*)`
+    );
+    this.liElemReg = new RegExp(`^(.*)[^${delimiter}]${delimiter} (.*)$`);
     this.needsUpdate = true;
   }
 
@@ -99,7 +101,7 @@ export class ListParser {
   }
 
   public isKeyValueLiElem(line: string) {
-    return this.liElemReg.test(line);
+    return this.liElemReg.test(line.replace("<br>", "\n"));
   }
 
   public getKeyFromLiElem(line: string): string {

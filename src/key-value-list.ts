@@ -16,6 +16,7 @@ import { List } from "./list";
 import { ListItemWidth } from "./types";
 import { KeyValueLineWidget } from "./widgets";
 import { ListParser } from "./list-parser";
+import { removeInvalidHtmlTags } from "./utils";
 
 const excludeFileFromCssClasses = (plugin: KeyValueListPlugin) => {
   const noteFile: TFile | null = plugin.app.workspace.getActiveFile();
@@ -82,7 +83,12 @@ export class KeyValueList {
             const tdKey = document.createElement("td");
             tr.appendChild(tdKey);
 
-            let keyText = parser.getKeyFromLiElem(listItem.innerHTML.trim());
+            let keyText = removeInvalidHtmlTags(
+              parser.getKeyFromLiElem(
+                listItem.innerHTML.replace("\n", " ").trim()
+              )
+            );
+
             // Include the delimiter if the settings.displayDelimiter is true.
             if (plugin.settings.displayDelimiter) {
               keyText += plugin.settings.delimiter;
@@ -107,8 +113,10 @@ export class KeyValueList {
             tdKey.appendChild(keyElem);
 
             const tdValue = document.createElement("td");
-            tdValue.innerHTML = parser.getValueFromLiElem(
-              listItem.innerHTML.trim()
+            tdValue.innerHTML = removeInvalidHtmlTags(
+              parser.getValueFromLiElem(
+                listItem.innerHTML.replace("\n", " ").trim()
+              )
             );
             tdValue.style.padding = `${plugin.settings.verticalPadding + 2}px ${
               plugin.settings.horizontalPadding
@@ -120,6 +128,16 @@ export class KeyValueList {
           }
         }
       }
+    });
+
+    // Keep track of the pointer state. We're avoiding updates when it's down,
+    // since that prevents link clicks to work properly in edit mode.
+    let isPointerDown: boolean = false;
+    this.plugin.registerDomEvent(window, "pointerdown", () => {
+      isPointerDown = true;
+    });
+    this.plugin.registerDomEvent(window, "pointerup", () => {
+      isPointerDown = false;
     });
 
     // Register a CodeMirror view plugin to handle edit mode.
@@ -162,6 +180,8 @@ export class KeyValueList {
           };
 
           update(update: ViewUpdate) {
+            if (isPointerDown) return;
+
             if (
               !this.editor ||
               !plugin.settings.activeInEditMode ||
@@ -243,7 +263,7 @@ export class KeyValueList {
                     : this.listWidths[index].key,
                   ...Array.from(
                     document.getElementsByClassName(`kvl-key-inner-${index}`)
-                  ).map((elem) => elem.clientWidth + 20)
+                  ).map((elem: Element) => elem.clientWidth + 20)
                 ),
                 row: Math.max(
                   this.listWidths[index].rowNeedsUpdate
@@ -252,10 +272,11 @@ export class KeyValueList {
                   ...Array.from(
                     document.getElementsByClassName(`kvl-row-inner-${index}`)
                   ).map(
-                    (elem) =>
+                    (elem: Element) =>
                       elem.children[0].clientWidth +
                       elem.children[1].clientWidth +
-                      plugin.settings.horizontalPadding * 2
+                      plugin.settings.horizontalPadding * 2 +
+                      (elem.querySelector("a") ? 16 : 0)
                   )
                 ),
                 keyNeedsUpdate: false,

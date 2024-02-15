@@ -15,6 +15,10 @@
     background-color: var(--background-secondary);
 }
 
+.kvl-row + .cm-widgetBuffer + .cm-formatting-link-string {
+    display: none;
+}
+
 .kvl-key-inner > *,
 .kvl-value > * {
     display: inline;
