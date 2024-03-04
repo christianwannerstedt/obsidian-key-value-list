@@ -21,9 +21,9 @@ export class ListParser {
       this.plugin.settings.delimiter || DEFAULT_SETTINGS.delimiter
     );
     this.keyValueReg = new RegExp(
-      `^[ \t]*${bullet}(.*)[^${delimiter}]${delimiter} (.*)`
+      `^[ \t]*${bullet}(.*[^${delimiter}])${delimiter} (.*)`
     );
-    this.liElemReg = new RegExp(`^(.*)[^${delimiter}]${delimiter} (.*)$`);
+    this.liElemReg = new RegExp(`^(.*[^${delimiter}])${delimiter} (.*)$`);
     this.needsUpdate = true;
   }
 
