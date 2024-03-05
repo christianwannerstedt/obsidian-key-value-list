@@ -16,7 +16,6 @@ import { List } from "./list";
 import { KeyValuePiece, ListItemWidth } from "./types";
 import { KeyValueLineWidget } from "./widgets";
 import { ListParser } from "./list-parser";
-import { removeInvalidHtmlTags } from "./utils";
 
 const excludeFileFromCssClasses = (plugin: KeyValueListPlugin) => {
   const noteFile: TFile | null = plugin.app.workspace.getActiveFile();
