@@ -13,7 +13,7 @@ import {
 import { Editor, editorInfoField } from "obsidian";
 import KeyValueListPlugin from "./main";
 import { List } from "./list";
-import { ListItemWidth } from "./types";
+import { KeyValuePiece, ListItemWidth } from "./types";
 import { KeyValueLineWidget } from "./widgets";
 import { ListParser } from "./list-parser";
 import { removeInvalidHtmlTags } from "./utils";
@@ -45,11 +45,7 @@ export class KeyValueList {
         return;
       }
 
-      const listElements = element.findAll("ul");
-      const displayBulletChar: string =
-        plugin.settings.displayBulletChar || "-";
-
-      for (const listElement of listElements) {
+      for (const listElement of element.findAll("ul")) {
         const listItems = listElement.findAll("li");
         const isKeyValueList = listItems.every((listItem) =>
           parser.isKeyValueLiElem(listItem.innerText.trim())
@@ -83,27 +79,14 @@ export class KeyValueList {
             const tdKey = document.createElement("td");
             tr.appendChild(tdKey);
 
-            let keyText = removeInvalidHtmlTags(
-              parser.getKeyFromLiElem(
-                listItem.innerHTML.replace("\n", " ").trim()
-              )
-            );
-
-            // Include the delimiter if the settings.displayDelimiter is true.
-            if (plugin.settings.displayDelimiter) {
-              keyText += plugin.settings.delimiter;
-            }
-            // Include the bullet if the settings.displayBullet is true.
-            if (plugin.settings.displayBullet) {
-              keyText = `${displayBulletChar} ${keyText}`;
-            }
+            const pieces: KeyValuePiece = parser.getPiecesFromLiElem(listItem);
 
             // If the settings.boldKey is true, wrap the key in a strong tag.
             const keyElemType: string = plugin.settings.boldKey
               ? "strong"
               : "span";
             const keyElem = document.createElement(keyElemType);
-            keyElem.innerHTML = keyText;
+            keyElem.innerHTML = pieces.key;
             if (plugin.settings.isKeyColored) {
               keyElem.style.color = plugin.settings.keyColor;
             }
@@ -113,11 +96,7 @@ export class KeyValueList {
             tdKey.appendChild(keyElem);
 
             const tdValue = document.createElement("td");
-            tdValue.innerHTML = removeInvalidHtmlTags(
-              parser.getValueFromLiElem(
-                listItem.innerHTML.replace("\n", " ").trim()
-              )
-            );
+            tdValue.innerHTML = pieces.value;
             tdValue.style.padding = `${plugin.settings.verticalPadding + 2}px ${
               plugin.settings.horizontalPadding
             }px`;
@@ -132,7 +111,7 @@ export class KeyValueList {
 
     // Keep track of the pointer state. We're avoiding updates when it's down,
     // since that prevents link clicks to work properly in edit mode.
-    let isPointerDown: boolean = false;
+    let isPointerDown = false;
     this.plugin.registerDomEvent(window, "pointerdown", () => {
       isPointerDown = true;
     });

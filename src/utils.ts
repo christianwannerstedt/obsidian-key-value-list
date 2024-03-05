@@ -4,7 +4,7 @@ export function escapeRegExp(string: string) {
 }
 
 export function removeInvalidHtmlTags(inputString: string): string {
-  const tagRegex: RegExp = /<\/?([a-z][a-z0-9]*)\b[^>]*>/gi;
+  const tagRegex = /<\/?([a-z][a-z0-9]*)\b[^>]*>/gi;
   let match: RegExpExecArray | null;
   const stack: { tagName: string; fullTag: string }[] = [];
   const invalidTags: string[] = [];

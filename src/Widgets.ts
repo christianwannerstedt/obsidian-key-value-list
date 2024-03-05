@@ -1,5 +1,5 @@
 import { WidgetType } from "@codemirror/view";
-import { ListItemWidth } from "./types";
+import { KeyValuePiece, ListItemWidth } from "./types";
 import KeyValueListPlugin from "./main";
 import { MarkdownRenderer } from "obsidian";
 import { KeyValueListPluginSettings } from "./settings";
@@ -30,30 +30,10 @@ export class KeyValueLineWidget extends WidgetType {
 
   toDOM() {
     const settings: KeyValueListPluginSettings = this.plugin.settings;
-    const bullet = "-";
-    const displayBulletChar: string = settings.displayBulletChar || "-";
-    const delimiter: string = settings.delimiter || ":";
     const isEven: boolean = this.listIndex % 2 == 0;
-    const split: number = this.textLine.indexOf(delimiter);
-    let key = `${
-      settings.displayBullet ? `\\${displayBulletChar} ` : ""
-    }${this.textLine
-      .substring(
-        bullet.length + 1,
-        split + (settings.displayDelimiter ? delimiter.length : 0)
-      )
-      .trim()}`;
-
-    // We need to handle rows starting with a checkbox
-    if (!settings.displayBullet && key.charAt(0) === "[") {
-      key = `- ${key}`;
-    } else if (settings.displayBullet && key.startsWith("\\- [")) {
-      key = key.substring(1);
-    }
-
-    let value: string = this.textLine
-      .substring(split + delimiter.length)
-      .trim();
+    const pieces: KeyValuePiece = this.plugin.parser.getPiecesFromString(
+      this.textLine
+    );
 
     // Container
     const row = document.createElement("span");
@@ -89,7 +69,7 @@ export class KeyValueLineWidget extends WidgetType {
       keySpanInner.style.color = settings.keyColor;
     }
     keySpanInner.className = `kvl-key-inner kvl-key-inner-${this.listId}`;
-    this.renderMarkdown(key, keySpanInner);
+    this.renderMarkdown(pieces.key, keySpanInner);
 
     // Value
     const valueSpan = document.createElement("span");
@@ -98,11 +78,7 @@ export class KeyValueLineWidget extends WidgetType {
       valueSpan.style.color = settings.valueColor;
     }
 
-    // Escape any footnotes in the value. A foot note is a number after the ^ symbol in square brackets.
-    // Example: This is a footnote[^1]
-    value = value.replace(/\[(\^\d+)\]/g, "\\$1");
-
-    this.renderMarkdown(value, valueSpan);
+    this.renderMarkdown(pieces.value, valueSpan);
 
     row.appendChild(rowInner);
     rowInner.appendChild(keySpan);

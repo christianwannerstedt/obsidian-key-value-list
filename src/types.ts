@@ -4,3 +4,9 @@ export interface ListItemWidth {
   keyNeedsUpdate: boolean;
   rowNeedsUpdate: boolean;
 }
+
+export interface KeyValuePiece {
+  key: string;
+  delimiter: string;
+  value: string;
+}
