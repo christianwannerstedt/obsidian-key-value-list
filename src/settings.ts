@@ -149,7 +149,9 @@ export class SettingTab extends PluginSettingTab {
 
     const displayDelimiterChar = new Setting(containerEl)
       .setName("Delimiter")
-      .setDesc("The character(s) that separate the key from the value")
+      .setDesc(
+        "The character(s) that separate the key from the value. It is possible to use several different delimiters, by separating them with commas"
+      )
       .setClass("foldable-setting")
       .setClass(this.plugin.settings.displayDelimiter ? "enabled" : "disabled")
       .addText((text: TextComponent) =>

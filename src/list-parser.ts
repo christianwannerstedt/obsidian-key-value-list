@@ -1,8 +1,9 @@
 import { Editor } from "obsidian";
 import { List } from "./list";
 import KeyValueListPlugin from "./main";
-import { escapeRegExp } from "./utils";
+import { escapeRegExp, removeInvalidHtmlTags } from "./utils";
 import { DEFAULT_SETTINGS } from "./settings";
+import { KeyValuePiece } from "./types";
 
 const listItemReg = new RegExp(`^[ \t]*-(.*)`);
 
@@ -20,10 +21,15 @@ export class ListParser {
     const delimiter: string = escapeRegExp(
       this.plugin.settings.delimiter || DEFAULT_SETTINGS.delimiter
     );
+    // Trim spaces and tabs from the delimiter
+    const delimiters = delimiter
+      .split(",")
+      .map((d) => d.trim()) //escapeRegExp(d).trim())
+      .join("|");
     this.keyValueReg = new RegExp(
-      `^[ \t]*${bullet}(.*[^${delimiter}])${delimiter} (.*)`
+      `^[ \t]*${bullet}(.*[^:])(${delimiters}) (.*)`
     );
-    this.liElemReg = new RegExp(`^(.*[^${delimiter}])${delimiter} (.*)$`);
+    this.liElemReg = new RegExp(`^(.*[^:])(${delimiters}) (.*)$`);
     this.needsUpdate = true;
   }
 
@@ -104,12 +110,67 @@ export class ListParser {
     return this.liElemReg.test(line.replace("<br>", "\n"));
   }
 
-  public getKeyFromLiElem(line: string): string {
-    return line.match(this.liElemReg)?.[1] || "";
+  public getPiecesFromLiElem(listItem: Element): KeyValuePiece {
+    const match = listItem.innerHTML
+      .replace("\n", " ")
+      .trim()
+      .replace("&gt;", ">")
+      .replace("&lt;", "<")
+      .match(this.liElemReg);
+
+    let key = match?.[1] || "";
+    if (this.plugin.settings.displayBullet) {
+      key = `${this.plugin.settings.displayBulletChar} ${key}`;
+    }
+
+    const delimiter = (match?.[2] || "")
+      .replace(">", "&gt;")
+      .replace("<", "&lt;");
+    if (this.plugin.settings.displayDelimiter) {
+      key = `${key}${delimiter}`;
+    }
+
+    return {
+      key: removeInvalidHtmlTags(key),
+      delimiter,
+      value: removeInvalidHtmlTags(match?.[3] || ""),
+    };
   }
 
-  public getValueFromLiElem(line: string): string {
-    return line.match(this.liElemReg)?.[2] || "";
+  public getPiecesFromString(line: string): KeyValuePiece {
+    const match = line
+      .replace("&gt;", ">")
+      .replace("&lt;", "<")
+      .match(this.liElemReg);
+
+    let key = (match?.[1] || "").substring(2);
+    if (this.plugin.settings.displayBullet) {
+      key = `\\${this.plugin.settings.displayBulletChar} ${key}`;
+    }
+
+    // We need to handle rows starting with a checkbox
+    if (!this.plugin.settings.displayBullet && key.charAt(0) === "[") {
+      key = `- ${key}`;
+    } else if (this.plugin.settings.displayBullet && key.startsWith("\\- [")) {
+      key = key.substring(1);
+    }
+
+    const delimiter = (match?.[2] || "")
+      .replace(">", "&gt;")
+      .replace("<", "&lt;");
+    if (this.plugin.settings.displayDelimiter) {
+      key = `${key}${delimiter}`;
+    }
+
+    // Escape any footnotes in the value. A foot note is a number after the ^ symbol in square brackets.
+    // Example: This is a footnote[^1]
+    const value = (match?.[3] || "").replace(/\[(\^\d+)\]/g, "\\$1");
+
+    return {
+      key,
+      delimiter,
+      value,
+    };
   }
 
   private isKeyValueListItem(line: string): boolean {
