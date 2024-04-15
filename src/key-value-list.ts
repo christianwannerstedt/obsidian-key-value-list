@@ -13,9 +13,10 @@ import {
 import { Editor, editorInfoField } from "obsidian";
 import KeyValueListPlugin from "./main";
 import { List } from "./list";
-import { KeyValuePiece, ListItemWidth } from "./types";
+import { KeyValuePiece, ListItemWidth, ListRows } from "./types";
 import { KeyValueLineWidget } from "./widgets";
 import { ListParser } from "./list-parser";
+import { hashCode } from "./utils";
 
 const excludeFileFromCssClasses = (plugin: KeyValueListPlugin) => {
   const noteFile: TFile | null = plugin.app.workspace.getActiveFile();
@@ -34,6 +35,7 @@ export class KeyValueList {
   async load() {
     const plugin: KeyValueListPlugin = this.plugin;
     const parser: ListParser = this.parser;
+    const listRows: ListRows = {};
 
     // Register a Markdown post processor to handle read mode.
     this.plugin.registerMarkdownPostProcessor((element, context) => {
@@ -182,84 +184,92 @@ export class KeyValueList {
                     .filter((list: List) => list.isKeyValueList)
                 : [];
 
-            // If the number of lists changed, we need to reset the list widths.
-            if (lists.length != this.listWidths.length) {
-              this.listWidths = lists.map(() => ({
-                key: 0,
-                row: 0,
-                keyNeedsUpdate: true,
-                rowNeedsUpdate: true,
-              }));
+            // Collect the collectedHashes from the list rows.
+            const collectedHashes: string[] = [];
+            lists.forEach((list: List) => {
+              list.collectedHashes.forEach((hash: string) => {
+                collectedHashes.push(hash);
+              });
+            });
+
+            // Remove old values from listRows
+            for (const hash in listRows) {
+              if (!collectedHashes.includes(hash)) {
+                delete listRows[hash];
+              }
             }
 
-            // Check if the cursor is inside a list.
+            // We need to update if any of the collectedHashes are not in the listRows.
+            let needsUpdate = false;
+
             const touchedListIndex: number = lists.findIndex(
               (list) => list.hasCursorInside
             );
-            const isAnyListTouched: boolean = touchedListIndex >= 0;
-            if (!isAnyListTouched && this.lastTouchedListIndex !== -1) {
-              if (this.listWidths[this.lastTouchedListIndex]) {
-                this.listWidths[this.lastTouchedListIndex].keyNeedsUpdate =
-                  true;
-                this.listWidths[this.lastTouchedListIndex].rowNeedsUpdate =
-                  false;
+            if (touchedListIndex >= 0) {
+              needsUpdate = true;
+            } else {
+              for (const hash of collectedHashes) {
+                if (
+                  !listRows[hash] ||
+                  !listRows[hash].completed ||
+                  listRows[hash].touched ||
+                  !listRows[hash].calculatedKey ||
+                  !listRows[hash].calculatedValue
+                ) {
+                  needsUpdate = true;
+                  break;
+                }
               }
-              this.lastTouchedListIndex = -1;
-
-              // When the cursor leaves a list, we need to update the decorations
-              // two additional times. One to ensure proper key width and one for
-              // the row width.
-              this.updateCounter = 3;
-            } else if (isAnyListTouched) {
-              this.lastTouchedListIndex = touchedListIndex;
             }
-
-            if (
-              update.docChanged ||
-              update.viewportChanged ||
-              isAnyListTouched ||
-              this.updateCounter ||
-              parser.needsUpdate
-            ) {
-              if (this.updateCounter > 0) {
-                this.updateCounter--;
-              }
-              if (parser.needsUpdate) {
-                parser.needsUpdate = false;
-              }
+            if (needsUpdate && update.view.dom.clientWidth > 0) {
               this.decorations = this.buildDecorations(update.view, lists);
             }
           }
 
           getListWidths(lists: List[]) {
-            lists.forEach((_list: List, index: number) => {
-              // Get the max width of the key and the row for every line in the list.
-              this.listWidths[index] = {
-                key: Math.max(
-                  this.listWidths[index].keyNeedsUpdate
-                    ? 0
-                    : this.listWidths[index].key,
-                  ...Array.from(
-                    document.getElementsByClassName(`kvl-key-inner-${index}`)
-                  ).map((elem: Element) => elem.clientWidth + 20)
-                ),
-                row: Math.max(
-                  this.listWidths[index].rowNeedsUpdate
-                    ? 0
-                    : this.listWidths[index].row,
-                  ...Array.from(
-                    document.getElementsByClassName(`kvl-row-inner-${index}`)
-                  ).map(
-                    (elem: Element) =>
-                      elem.children[0].clientWidth +
-                      elem.children[1].clientWidth +
-                      plugin.settings.horizontalPadding * 2 +
-                      (elem.querySelector("a") ? 16 : 0)
-                  )
-                ),
-                keyNeedsUpdate: false,
-                rowNeedsUpdate: this.listWidths[index].keyNeedsUpdate,
-              };
+            lists.forEach((list: List, index: number) => {
+              list.collectedLines.forEach((lineText: string, index: number) => {
+                const lineHash = hashCode(lineText);
+                if (!listRows[lineHash]) {
+                  listRows[lineHash] = {
+                    hash: lineHash,
+                    text: lineText,
+                    key: 0,
+                    value: 0,
+                    calculatedKey: false,
+                    calculatedValue: false,
+                    completed: false,
+                    touched: false,
+                  };
+                } else {
+                  if (listRows[lineHash].touched) {
+                    listRows[lineHash].touched = false;
+                  }
+                  if (!listRows[lineHash].calculatedKey) {
+                    const keyWidth =
+                      document.getElementsByClassName(
+                        `kvl-key-${lineHash} unset`
+                      )[0]?.clientWidth || 0;
+                    if (keyWidth > 0) {
+                      listRows[lineHash].key =
+                        keyWidth + plugin.settings.horizontalPadding;
+                      listRows[lineHash].calculatedKey = true;
+                    }
+                  } else if (!listRows[lineHash].calculatedValue) {
+                    const valueWidth =
+                      document.getElementsByClassName(
+                        `kvl-value-${lineHash} unset`
+                      )[0]?.clientWidth || 0;
+                    if (valueWidth > 0) {
+                      listRows[lineHash].value =
+                        valueWidth + plugin.settings.horizontalPadding;
+                      listRows[lineHash].calculatedValue = true;
+                    }
+                  } else if (!listRows[lineHash].completed) {
+                    listRows[lineHash].completed = true;
+                  }
+                }
+              });
             });
           }
 
@@ -269,36 +279,79 @@ export class KeyValueList {
               return builder.finish();
             }
             const cursor: EditorPosition = this.editor.getCursor();
-            this.getListWidths(lists);
 
-            const maxKeyWidth: number =
+            this.getListWidths(lists);
+            const maxAllowedKeyWidth: number =
               (plugin.settings.maxKeyWidth / 100) * view.dom.clientWidth;
+            const maxAllowedValueWidth: number =
+              view.dom.clientWidth -
+              maxAllowedKeyWidth -
+              plugin.settings.horizontalPadding * 4;
+
             const markdownView =
               plugin.app.workspace.getActiveViewOfType(MarkdownView);
 
             lists.forEach((list: List, index: number) => {
+              // Get the max widths of the key and the row for every line in the list.
+              let maxKey = 0;
+              let maxValue = 0;
+              list.collectedHashes.forEach((hash: string) => {
+                // if (listRows[hash].completed) {
+                if (listRows[hash].key > maxKey) {
+                  maxKey = listRows[hash].key;
+                }
+                if (listRows[hash].value > maxValue) {
+                  maxValue = listRows[hash].value;
+                }
+                // }
+              });
+              let maxRow = Math.min(
+                maxKey + maxValue + plugin.settings.horizontalPadding * 4,
+                view.dom.clientWidth - 100
+              );
+
               for (
                 let lineNumber: number = list.start.line;
                 lineNumber < list.end.line;
                 lineNumber++
               ) {
-                if (lineNumber === cursor.line) {
-                  continue;
-                }
                 const line: Line = view.state.doc.line(lineNumber + 1);
+                const lineHash = hashCode(line.text);
+                if (lineNumber === cursor.line) {
+                  if (listRows[lineHash]) {
+                    listRows[lineHash] = {
+                      ...listRows[lineHash],
+                      touched: true,
+                      calculatedKey: false,
+                      calculatedValue: false,
+                      completed: false,
+                    };
+                  }
+                  continue;
+                } else if (listRows[lineHash].touched) {
+                  listRows[lineHash].touched = false;
+                  listRows[lineHash].calculatedKey = false;
+                  listRows[lineHash].calculatedValue = false;
+                  listRows[lineHash].completed = false;
+                }
+
                 builder.add(
                   line.from,
                   line.to,
                   Decoration.replace({
-                    widget: new KeyValueLineWidget(
+                    widget: new KeyValueLineWidget({
                       plugin,
-                      index,
-                      lineNumber,
-                      line.text,
-                      maxKeyWidth,
-                      this.listWidths[index],
-                      markdownView?.file?.path || ""
-                    ),
+                      listId: index,
+                      listIndex: lineNumber,
+                      textLine: line.text,
+                      listKeyWidth: maxKey,
+                      listRowWidth: maxRow,
+                      maxAllowedKeyWidth,
+                      maxAllowedValueWidth,
+                      listRow: listRows[lineHash],
+                      editorWidth: view.dom.clientWidth,
+                      path: markdownView?.file?.path || "",
+                    }),
                   })
                 );
               }

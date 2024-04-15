@@ -1,7 +1,7 @@
 import { Editor } from "obsidian";
 import { List } from "./list";
 import KeyValueListPlugin from "./main";
-import { escapeRegExp, removeInvalidHtmlTags } from "./utils";
+import { escapeRegExp, hashCode, removeInvalidHtmlTags } from "./utils";
 import { DEFAULT_SETTINGS } from "./settings";
 import { KeyValuePiece } from "./types";
 
@@ -60,8 +60,10 @@ export class ListParser {
         let hasCursorInside = false;
 
         let listEndLineLookup: number = currentLine;
+        const collectedLines: string[] = [];
+        const collectedHashes: string[] = [];
         while (listEndLineLookup <= editor.lastLine()) {
-          const line = editor.getLine(listEndLineLookup);
+          const line: string = editor.getLine(listEndLineLookup);
           // Check if the line is a list item
           if (!this.isLineList(line)) {
             break;
@@ -70,13 +72,12 @@ export class ListParser {
             hasCursorInside = true;
           }
 
-          // Check if the list item is a key-value list item (or the cursor is on the line)
-          if (
-            !this.isKeyValueListItem(line) &&
-            cursorLine !== listEndLineLookup
-          ) {
+          // Check if the list item is a key-value list item
+          if (!this.isKeyValueListItem(line)) {
             isKeyValueList = false;
           }
+          collectedLines.push(line);
+          collectedHashes.push(hashCode(line));
 
           if (listEndLineLookup >= endLine) {
             listEndLineLookup = endLine;
@@ -92,7 +93,9 @@ export class ListParser {
               ch: editor.getLine(listEndLineLookup).length,
             },
             isKeyValueList,
-            hasCursorInside
+            hasCursorInside,
+            collectedLines,
+            collectedHashes
           )
         );
         currentLine = listEndLineLookup;

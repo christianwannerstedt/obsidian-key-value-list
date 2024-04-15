@@ -5,6 +5,8 @@ export class List {
     public start: EditorPosition,
     public end: EditorPosition,
     public isKeyValueList: boolean,
-    public hasCursorInside: boolean
+    public hasCursorInside: boolean,
+    public collectedLines: string[],
+    public collectedHashes: string[]
   ) {}
 }

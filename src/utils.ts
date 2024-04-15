@@ -40,3 +40,9 @@ export function removeInvalidHtmlTags(inputString: string): string {
 
   return resultString;
 }
+
+export const hashCode = (val: string) =>
+  val
+    .split("")
+    .reduce((a, b) => ((a << 5) - a + b.charCodeAt(0)) | 0, 0)
+    .toString();
