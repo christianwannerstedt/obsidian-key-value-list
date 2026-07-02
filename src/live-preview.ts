@@ -1,4 +1,4 @@
-import { RangeSetBuilder } from "@codemirror/state";
+import { RangeSetBuilder, StateEffect } from "@codemirror/state";
 import {
   Decoration,
   DecorationSet,
@@ -8,11 +8,12 @@ import {
   ViewUpdate,
   WidgetType,
 } from "@codemirror/view";
-import { MarkdownRenderer, TFile, editorInfoField } from "obsidian";
+import { App, Editor, MarkdownRenderer, MarkdownView, TFile, editorInfoField } from "obsidian";
 import KeyValueListPlugin from "./main";
 import { ScannedList, scanKeyValueLists } from "./list-scanner";
 import {
   buildKeyValueLineRegex,
+  KeyValuePiece,
   parseDelimiters,
   splitKeyValueLine,
 } from "./parser";
@@ -21,6 +22,27 @@ import { KeyValueListPluginSettings } from "./settings";
 
 // Approximate space used by the list bullet/indent before our widget content.
 const LIST_INDENT_PX = 32;
+
+export const kvlSettingsEffect = StateEffect.define<null>();
+
+export function refreshLivePreviewDecorations(app: App): void {
+  app.workspace.iterateAllLeaves((leaf) => {
+    const view = leaf.view;
+    if (!(view instanceof MarkdownView)) return;
+
+    const editorView = getEditorView(view.editor);
+    if (!editorView) return;
+
+    editorView.dispatch({
+      effects: kvlSettingsEffect.of(null),
+    });
+  });
+}
+
+function getEditorView(editor: Editor): EditorView | null {
+  const cm = (editor as Editor & { cm?: EditorView }).cm;
+  return cm ?? null;
+}
 
 function buildRenderKey(
   settings: KeyValueListPluginSettings,
@@ -59,11 +81,11 @@ class KvlRowWidget extends WidgetType {
   }
 
   toDOM(): HTMLElement {
-    const pieces = splitKeyValueLine(
-      this.lineText,
-      this.lineRegex,
-      this.settings
-    );
+    const pieces = splitKeyValueLine(this.lineText, this.lineRegex, {
+      ...this.settings,
+      displayBullet: false,
+      displayDelimiter: false,
+    });
     if (!pieces) {
       const fallback = document.createElement("span");
       fallback.textContent = this.lineText;
@@ -83,7 +105,7 @@ class KvlRowWidget extends WidgetType {
       this.settings.boldKey ? "strong" : "span"
     );
     keyInner.className = "kvl-key-inner";
-    this.renderMarkdown(pieces.key, keyInner);
+    this.populateKeyCell(keyInner, pieces);
     keyCell.appendChild(keyInner);
 
     const valueCell = document.createElement("span");
@@ -93,6 +115,20 @@ class KvlRowWidget extends WidgetType {
     row.appendChild(keyCell);
     row.appendChild(valueCell);
     return row;
+  }
+
+  private populateKeyCell(keyInner: HTMLElement, pieces: KeyValuePiece): void {
+    if (this.settings.displayBullet) {
+      keyInner.appendChild(
+        document.createTextNode(`${this.settings.displayBulletChar} `)
+      );
+    }
+
+    this.renderMarkdown(pieces.key, keyInner);
+
+    if (this.settings.displayDelimiter) {
+      keyInner.appendChild(document.createTextNode(pieces.delimiter));
+    }
   }
 
   private renderMarkdown(markdown: string, container: HTMLElement): void {
@@ -227,7 +263,10 @@ export function registerLivePreview(plugin: KeyValueListPlugin): void {
             update.docChanged ||
             update.viewportChanged ||
             update.selectionSet ||
-            update.geometryChanged
+            update.geometryChanged ||
+            update.transactions.some((tr) =>
+              tr.effects.some((effect) => effect.is(kvlSettingsEffect))
+            )
           ) {
             this.decorations = this.buildDecorations(update.view);
           }

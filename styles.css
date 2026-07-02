@@ -3,7 +3,6 @@
     display: table;
     width: 100%;
     border-collapse: collapse;
-    list-style: none;
     padding: 0;
     margin: 0;
 }
@@ -41,7 +40,12 @@
     background-color: var(--kvl-stripe-bg, var(--background-secondary));
 }
 
-/* Live Preview */
+/* Live Preview: hide native list markers on formatted rows */
+.cm-line:has(> .kvl-live-row) .cm-formatting-list-ul,
+.cm-line:has(> .kvl-live-row) .cm-formatting-list {
+    display: none !important;
+}
+
 .kvl-live-row {
     display: inline-flex;
     align-items: flex-start;
@@ -89,6 +93,11 @@
 .kvl-value > * {
     display: inline;
     margin: 0;
+}
+
+.kvl-key-inner .list-bullet,
+.kvl-value .list-bullet {
+    display: none !important;
 }
 
 .kvl-value p {

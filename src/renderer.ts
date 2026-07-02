@@ -9,9 +9,9 @@ import {
 export function renderKeyValueList(
   listItems: HTMLElement[],
   settings: KeyValueListPluginSettings
-): HTMLUListElement {
+): HTMLDivElement {
   const regex = buildKeyValueRegex(parseDelimiters(settings.delimiter));
-  const list = document.createElement("ul");
+  const list = document.createElement("div");
   list.classList.add("kvl-list");
   applyListStyles(list, settings);
 
@@ -19,7 +19,7 @@ export function renderKeyValueList(
     const pieces = splitKeyValueFromLi(listItem, regex, settings);
     if (!pieces) return;
 
-    const row = document.createElement("li");
+    const row = document.createElement("div");
     row.classList.add("kvl-row");
     row.classList.add(index % 2 === 0 ? "kvl-row-odd" : "kvl-row-even");
 
@@ -43,7 +43,7 @@ export function renderKeyValueList(
 }
 
 function applyListStyles(
-  list: HTMLUListElement,
+  list: HTMLDivElement,
   settings: KeyValueListPluginSettings
 ): void {
   list.style.setProperty("--kvl-v-pad", `${settings.verticalPadding}px`);

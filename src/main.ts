@@ -5,7 +5,10 @@ import {
   SettingTab,
 } from "./settings";
 import { registerPostProcessor } from "./post-processor";
-import { registerLivePreview } from "./live-preview";
+import {
+  refreshLivePreviewDecorations,
+  registerLivePreview,
+} from "./live-preview";
 
 export default class KeyValueListPlugin extends Plugin {
   settings: KeyValueListPluginSettings;
@@ -33,6 +36,7 @@ export default class KeyValueListPlugin extends Plugin {
   refresh() {
     this.app.workspace.updateOptions();
     this.rerender();
+    refreshLivePreviewDecorations(this.app);
   }
 
   onunload() {}

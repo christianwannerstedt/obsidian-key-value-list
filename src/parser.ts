@@ -65,7 +65,9 @@ export function splitKeyValueFromLi(
   regex: RegExp,
   settings: KeyValueListPluginSettings
 ): KeyValuePiece | null {
-  return splitKeyValueHtml(listItem.innerHTML, regex, settings);
+  const content = listItem.cloneNode(true) as HTMLElement;
+  content.querySelectorAll(".list-bullet").forEach((el) => el.remove());
+  return splitKeyValueHtml(content.innerHTML, regex, settings);
 }
 
 export function splitKeyValueLine(
@@ -97,7 +99,7 @@ function formatKeyHtml(
   delimiter: string,
   settings: KeyValueListPluginSettings
 ): string {
-  let result = key;
+  let result = stripListBulletMarkup(key);
   if (settings.displayBullet) {
     result = `${settings.displayBulletChar} ${result}`;
   }
@@ -105,4 +107,11 @@ function formatKeyHtml(
     result = `${result}${delimiter}`;
   }
   return removeInvalidHtmlTags(result);
+}
+
+function stripListBulletMarkup(html: string): string {
+  const container = document.createElement("div");
+  container.innerHTML = html;
+  container.querySelectorAll(".list-bullet").forEach((el) => el.remove());
+  return container.innerHTML;
 }
