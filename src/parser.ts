@@ -25,7 +25,7 @@ export function buildKeyValueLineRegex(delimiters: string[]): RegExp {
 }
 
 export function isKeyValueText(text: string, regex: RegExp): boolean {
-  return regex.test(text.replace("<br>", "\n"));
+  return regex.test(text.replace(/<br>/g, "\n"));
 }
 
 export function isKeyValueListText(
@@ -41,7 +41,7 @@ export function splitKeyValueHtml(
   settings: KeyValueListPluginSettings
 ): KeyValuePiece | null {
   const match = html
-    .replace("\n", " ")
+    .replace(/\n/g, " ")
     .trim()
     .replace(/&gt;/g, ">")
     .replace(/&lt;/g, "<")

@@ -48,20 +48,17 @@ function shouldProcess(
   const isLivePreview =
     element.closest(".markdown-source-view") !== null;
 
-  if (isReadingView && !settings.activeInReadMode) {
+  // Live Preview is handled by the editor extension, not the post-processor.
+  if (isLivePreview) {
     return false;
   }
 
-  if (isLivePreview && !settings.activeInEditMode) {
-    return false;
+  if (isReadingView) {
+    return settings.activeInReadMode;
   }
 
-  // Post-processor may run in embedded contexts; allow when neither view is detected.
-  if (!isReadingView && !isLivePreview) {
-    return settings.activeInReadMode || settings.activeInEditMode;
-  }
-
-  return true;
+  // Embedded contexts without a known view: only process when read mode is enabled.
+  return settings.activeInReadMode;
 }
 
 function isExcludedByFrontmatter(app: App, sourcePath: string): boolean {

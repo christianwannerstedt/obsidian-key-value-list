@@ -22,7 +22,16 @@ import { KeyValueListPluginSettings } from "./settings";
 // Approximate space used by the list bullet/indent before our widget content.
 const LIST_INDENT_PX = 32;
 
+function buildRenderKey(
+  settings: KeyValueListPluginSettings,
+  lineRegex: RegExp
+): string {
+  return JSON.stringify(settings) + lineRegex.source + lineRegex.flags;
+}
+
 class KvlRowWidget extends WidgetType {
+  private readonly renderKey: string;
+
   constructor(
     private readonly plugin: KeyValueListPlugin,
     private readonly lineText: string,
@@ -34,6 +43,7 @@ class KvlRowWidget extends WidgetType {
     private readonly lineRegex: RegExp
   ) {
     super();
+    this.renderKey = buildRenderKey(settings, lineRegex);
   }
 
   eq(other: KvlRowWidget): boolean {
@@ -43,7 +53,8 @@ class KvlRowWidget extends WidgetType {
       this.rowIndex === other.rowIndex &&
       this.keyWidth === other.keyWidth &&
       this.listRowWidth === other.listRowWidth &&
-      this.path === other.path
+      this.path === other.path &&
+      this.renderKey === other.renderKey
     );
   }
 
