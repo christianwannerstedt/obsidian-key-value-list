@@ -129,31 +129,10 @@ export class SettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName("Display delimiter")
-      .setDesc("If the delimiter should be displayed in the key or not")
-      .addToggle((toggle: ToggleComponent) =>
-        toggle
-          .setValue(this.plugin.settings.displayDelimiter)
-          .onChange(async (value) => {
-            displayDelimiterChar.settingEl.toggleClass("disabled", !value);
-            displayDelimiterChar.settingEl.style.height = value
-              ? `${
-                  displayDelimiterChar.settingEl.innerHeight + foldablePadding
-                }px`
-              : "0px";
-            this.plugin.settings.displayDelimiter = value;
-            await this.plugin.saveData(this.plugin.settings);
-            this.plugin.refresh();
-          })
-      );
-
-    const displayDelimiterChar = new Setting(containerEl)
       .setName("Delimiter")
       .setDesc(
         "The character(s) that separate the key from the value. It is possible to use several different delimiters, by separating them with commas"
       )
-      .setClass("foldable-setting")
-      .setClass(this.plugin.settings.displayDelimiter ? "enabled" : "disabled")
       .addText((text: TextComponent) =>
         text
           .setPlaceholder(DEFAULT_SETTINGS.delimiter)
@@ -163,12 +142,20 @@ export class SettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
             this.plugin.refresh();
           })
-      )
-      .then((setting) => {
-        setting.settingEl.style.height = this.plugin.settings.displayDelimiter
-          ? `${setting.settingEl.clientHeight}px`
-          : "0px";
-      });
+      );
+
+    new Setting(containerEl)
+      .setName("Display delimiter")
+      .setDesc("If the delimiter should be displayed in the key or not")
+      .addToggle((toggle: ToggleComponent) =>
+        toggle
+          .setValue(this.plugin.settings.displayDelimiter)
+          .onChange(async (value) => {
+            this.plugin.settings.displayDelimiter = value;
+            await this.plugin.saveData(this.plugin.settings);
+            this.plugin.refresh();
+          })
+      );
 
     new Setting(containerEl)
       .setName("Max key width")
