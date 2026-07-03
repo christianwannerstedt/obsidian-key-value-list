@@ -17,6 +17,7 @@ import {
   editorInfoField,
   editorLivePreviewField,
 } from "obsidian";
+import { isActiveForFile } from "./css-classes";
 import KeyValueListPlugin from "./main";
 import { getFencedCodeBlockLines } from "./code-context";
 import { ScannedList, scanKeyValueLists } from "./list-scanner";
@@ -301,23 +302,6 @@ function isLivePreviewActive(state: EditorState): boolean {
   }
 }
 
-function isFileExcluded(
-  plugin: KeyValueListPlugin,
-  file: TFile | null
-): boolean {
-  if (!file) return false;
-
-  const cache = plugin.app.metadataCache.getFileCache(file);
-  const frontmatter = cache?.frontmatter;
-  if (!frontmatter) return false;
-
-  const classes = frontmatter.cssclasses ?? frontmatter.cssclass;
-  if (!classes) return false;
-
-  const classList = Array.isArray(classes) ? classes : [classes];
-  return classList.includes("nokeyvalue");
-}
-
 export function registerLivePreview(plugin: KeyValueListPlugin): void {
   plugin.registerEditorExtension(
     ViewPlugin.fromClass(
@@ -348,7 +332,7 @@ export function registerLivePreview(plugin: KeyValueListPlugin): void {
         }
 
         private buildDecorations(view: EditorView): DecorationSet {
-          if (!plugin.settings.activeInEditMode || !isLivePreviewActive(view.state)) {
+          if (!isLivePreviewActive(view.state)) {
             return Decoration.none;
           }
 
@@ -359,7 +343,15 @@ export function registerLivePreview(plugin: KeyValueListPlugin): void {
             return Decoration.none;
           }
 
-          if (isFileExcluded(plugin, file)) {
+          if (
+            !file ||
+            !isActiveForFile(
+              plugin.app,
+              file.path,
+              "edit",
+              plugin.settings
+            )
+          ) {
             return Decoration.none;
           }
 

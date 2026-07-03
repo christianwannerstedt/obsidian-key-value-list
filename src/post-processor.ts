@@ -1,4 +1,5 @@
 import { App, MarkdownPostProcessorContext } from "obsidian";
+import { isActiveForFile } from "./css-classes";
 import KeyValueListPlugin from "./main";
 import { KeyValueListPluginSettings } from "./settings";
 import {
@@ -41,12 +42,6 @@ function shouldProcess(
   context: MarkdownPostProcessorContext,
   settings: KeyValueListPluginSettings
 ): boolean {
-  if (isExcludedByFrontmatter(app, context.sourcePath)) {
-    return false;
-  }
-
-  const isReadingView =
-    element.closest(".markdown-reading-view") !== null;
   const isLivePreview =
     element.closest(".markdown-source-view") !== null;
 
@@ -55,22 +50,5 @@ function shouldProcess(
     return false;
   }
 
-  if (isReadingView) {
-    return settings.activeInReadMode;
-  }
-
-  // Embedded contexts without a known view: only process when read mode is enabled.
-  return settings.activeInReadMode;
-}
-
-function isExcludedByFrontmatter(app: App, sourcePath: string): boolean {
-  const cache = app.metadataCache.getCache(sourcePath);
-  const frontmatter = cache?.frontmatter;
-  if (!frontmatter) return false;
-
-  const classes = frontmatter.cssclasses ?? frontmatter.cssclass;
-  if (!classes) return false;
-
-  const classList = Array.isArray(classes) ? classes : [classes];
-  return classList.includes("nokeyvalue");
+  return isActiveForFile(app, context.sourcePath, "read", settings);
 }
