@@ -16,12 +16,12 @@ export function parseDelimiters(delimiterSetting: string): string[] {
 
 export function buildKeyValueRegex(delimiters: string[]): RegExp {
   const delimiterPattern = delimiters.map(escapeRegExp).join("|");
-  return new RegExp(`^(.*[^:])(${delimiterPattern}) (.*)$`);
+  return new RegExp(`^(.*[^:])(${delimiterPattern})(?: (.*))?$`);
 }
 
 export function buildKeyValueLineRegex(delimiters: string[]): RegExp {
   const delimiterPattern = delimiters.map(escapeRegExp).join("|");
-  return new RegExp(`^[ \\t]*-(.*[^:])(${delimiterPattern}) (.*)$`);
+  return new RegExp(`^[ \\t]*-(.*[^:])(${delimiterPattern})(?: (.*))?$`);
 }
 
 export function isKeyValueText(text: string, regex: RegExp): boolean {
