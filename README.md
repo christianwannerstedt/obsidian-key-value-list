@@ -35,7 +35,32 @@ Even if the plugin doesn't require any customizations at all, you can fine tune 
 ![Settings preview](https://github.com/christianwannerstedt/obsidian-key-value-list/assets/25314/acf39c55-9471-4e71-97ac-99e14eea36d0)
 
 ### File specific settings
-It is possible to choose whether the plugin should be active for individual files by using the frontmatter property `cssclasses`. Any files that contain the `nokeyvalue` class will be ignored by the plugin.
+It is possible to choose whether the plugin should be active for individual files by using the frontmatter property `cssclasses`:
+
+- `nokeyvalue` — disable the plugin for the file (overrides global settings)
+- `keyvalue` — enable the plugin in both Live Preview and read mode
+- `keyvalue-edit` — enable the plugin in Live Preview only
+- `keyvalue-read` — enable the plugin in read mode only
+
+When none of these classes are set, the global plugin settings apply. The enable classes are useful when the plugin is disabled by default and you want to opt in on specific files.
+
+### Column alignment
+You can right-align keys and/or values on a per-list basis using marker characters configured in the plugin settings (default for both: `;`):
+
+- **Key right-align marker** — placed immediately *before* the delimiter on the first row
+- **Value right-align marker** — placed immediately *after* the delimiter on the first row
+
+With the default delimiter `:` and markers `;`:
+
+```markdown
+- Total;:; 100
+- Tax: 25
+- Due: 125
+```
+
+The first row sets alignment for the entire list. Following rows use the plain delimiter. Alignment markers are not shown in the rendered output — only the delimiter itself is displayed.
+
+Leave either marker setting empty to disable that alignment option.
 
 ## Notes
 In order for a list to be considered a Key-Value list by this plugin, EVERY row, must contain a key value pair. If one or more rows don't contain a key-value pair, the list will be ignored by the plugin.

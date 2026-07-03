@@ -1,22 +1,23 @@
 import { KeyValueListPluginSettings } from "./settings";
 import {
-  KeyValuePiece,
+  ListAlignment,
+  resolveListAlignmentFromTexts,
   splitKeyValueFromLi,
-  buildKeyValueRegex,
-  parseDelimiters,
 } from "./parser";
 
 export function renderKeyValueList(
   listItems: HTMLElement[],
-  settings: KeyValueListPluginSettings
+  settings: KeyValueListPluginSettings,
+  contentWidth = 0
 ): HTMLDivElement {
-  const regex = buildKeyValueRegex(parseDelimiters(settings.delimiter));
+  const texts = listItems.map((item) => item.innerText.trim());
+  const alignment = resolveListAlignmentFromTexts(texts, settings);
   const list = document.createElement("div");
   list.classList.add("kvl-list");
-  applyListStyles(list, settings);
+  applyListStyles(list, settings, alignment, contentWidth);
 
   listItems.forEach((listItem, index) => {
-    const pieces = splitKeyValueFromLi(listItem, regex, settings);
+    const pieces = splitKeyValueFromLi(listItem, settings);
     if (!pieces) return;
 
     const row = document.createElement("div");
@@ -44,13 +45,18 @@ export function renderKeyValueList(
 
 function applyListStyles(
   list: HTMLDivElement,
-  settings: KeyValueListPluginSettings
+  settings: KeyValueListPluginSettings,
+  alignment: ListAlignment,
+  contentWidth: number
 ): void {
   list.style.setProperty("--kvl-v-pad", `${settings.verticalPadding}px`);
   list.style.setProperty("--kvl-h-pad", `${settings.horizontalPadding}px`);
 
-  if (settings.maxKeyWidth > 0) {
-    list.style.setProperty("--kvl-max-key-width", `${settings.maxKeyWidth}%`);
+  if (settings.maxKeyWidth > 0 && contentWidth > 0) {
+    const maxKeyWidthPx = Math.floor(
+      (settings.maxKeyWidth / 100) * contentWidth
+    );
+    list.style.setProperty("--kvl-max-key-width", `${maxKeyWidthPx}px`);
     list.classList.add("kvl-key-limited");
   }
 
@@ -69,10 +75,18 @@ function applyListStyles(
   } else if (settings.stripedBackgroundType === "custom") {
     list.classList.add("kvl-striped-custom");
   }
+
+  if (alignment.keyRight) {
+    list.classList.add("kvl-key-right");
+  }
+
+  if (alignment.valueRight) {
+    list.classList.add("kvl-value-right");
+  }
 }
 
 function createKeyCell(
-  pieces: KeyValuePiece,
+  pieces: { key: string },
   settings: KeyValueListPluginSettings
 ): HTMLElement {
   const keyCell = document.createElement("span");
@@ -89,11 +103,18 @@ function createKeyCell(
 }
 
 function createValueCell(
-  pieces: KeyValuePiece,
+  pieces: { value: string },
   settings: KeyValueListPluginSettings
 ): HTMLElement {
   const valueCell = document.createElement("span");
   valueCell.classList.add("kvl-value");
   valueCell.innerHTML = pieces.value;
   return valueCell;
+}
+
+export function getReadingViewContentWidth(element: HTMLElement): number {
+  const view = element.closest(
+    ".markdown-reading-view, .markdown-preview-view"
+  );
+  return view?.clientWidth ?? element.parentElement?.clientWidth ?? 0;
 }

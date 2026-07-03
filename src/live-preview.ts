@@ -17,13 +17,15 @@ import {
   editorInfoField,
   editorLivePreviewField,
 } from "obsidian";
+import { isActiveForFile } from "./css-classes";
 import KeyValueListPlugin from "./main";
 import { getFencedCodeBlockLines } from "./code-context";
 import { ScannedList, scanKeyValueLists } from "./list-scanner";
 import {
   buildKeyValueLineRegex,
   KeyValuePiece,
-  parseDelimiters,
+  ListAlignment,
+  resolveListAlignment,
   splitKeyValueLine,
 } from "./parser";
 import { getElementFont, measureTextWidth } from "./measure";
@@ -53,11 +55,8 @@ function getEditorView(editor: Editor): EditorView | null {
   return cm ?? null;
 }
 
-function buildRenderKey(
-  settings: KeyValueListPluginSettings,
-  lineRegex: RegExp
-): string {
-  return JSON.stringify(settings) + lineRegex.source + lineRegex.flags;
+function buildRenderKey(settings: KeyValueListPluginSettings): string {
+  return JSON.stringify(settings);
 }
 
 function getLivePreviewParseSettings(
@@ -80,12 +79,12 @@ class KvlRowWidget extends WidgetType {
     private readonly keyWidth: number,
     private readonly listRowWidth: number,
     private readonly needsKeyWrap: boolean,
+    private readonly listAlignment: ListAlignment,
     private readonly path: string,
-    private readonly settings: KeyValueListPluginSettings,
-    private readonly lineRegex: RegExp
+    private readonly settings: KeyValueListPluginSettings
   ) {
     super();
-    this.renderKey = buildRenderKey(settings, lineRegex);
+    this.renderKey = buildRenderKey(settings);
   }
 
   eq(other: KvlRowWidget): boolean {
@@ -96,6 +95,8 @@ class KvlRowWidget extends WidgetType {
       this.keyWidth === other.keyWidth &&
       this.listRowWidth === other.listRowWidth &&
       this.needsKeyWrap === other.needsKeyWrap &&
+      this.listAlignment.keyRight === other.listAlignment.keyRight &&
+      this.listAlignment.valueRight === other.listAlignment.valueRight &&
       this.path === other.path &&
       this.renderKey === other.renderKey
     );
@@ -104,7 +105,6 @@ class KvlRowWidget extends WidgetType {
   toDOM(): HTMLElement {
     const pieces = splitKeyValueLine(
       this.lineText,
-      this.lineRegex,
       getLivePreviewParseSettings(this.settings)
     );
     if (!pieces) {
@@ -123,7 +123,8 @@ class KvlRowWidget extends WidgetType {
       this.settings,
       this.keyWidth,
       this.listRowWidth,
-      this.needsKeyWrap
+      this.needsKeyWrap,
+      this.listAlignment
     );
 
     const keyCell = document.createElement("span");
@@ -178,7 +179,8 @@ function applyRowStyles(
   settings: KeyValueListPluginSettings,
   keyWidth: number,
   listRowWidth: number,
-  needsKeyWrap: boolean
+  needsKeyWrap: boolean,
+  alignment: ListAlignment
 ): void {
   row.style.setProperty("--kvl-v-pad", `${settings.verticalPadding}px`);
   row.style.setProperty("--kvl-h-pad", `${settings.horizontalPadding}px`);
@@ -213,6 +215,14 @@ function applyRowStyles(
       );
     }
   }
+
+  if (alignment.keyRight) {
+    row.classList.add("kvl-key-right");
+  }
+
+  if (alignment.valueRight) {
+    row.classList.add("kvl-value-right");
+  }
 }
 
 interface ListKeyWidth {
@@ -240,7 +250,6 @@ function measureRenderedKeyWidth(
 
 function computeListKeyWidth(
   list: ScannedList,
-  lineRegex: RegExp,
   settings: KeyValueListPluginSettings,
   font: string,
   contentWidth: number
@@ -249,7 +258,7 @@ function computeListKeyWidth(
   const parseSettings = getLivePreviewParseSettings(settings);
 
   for (const line of list.lines) {
-    const pieces = splitKeyValueLine(line, lineRegex, parseSettings);
+    const pieces = splitKeyValueLine(line, parseSettings);
     if (pieces) {
       max = Math.max(max, measureRenderedKeyWidth(pieces, settings, font));
     }
@@ -270,23 +279,24 @@ function computeListKeyWidth(
 
 function computeListRowWidth(
   list: ScannedList,
-  lineRegex: RegExp,
   settings: KeyValueListPluginSettings,
   font: string,
   keyWidth: number,
-  contentWidth: number
+  contentWidth: number,
+  alignment: ListAlignment
 ): number {
   const maxAvailable = contentWidth - LIST_INDENT_PX;
   let maxRowWidth = 0;
   const parseSettings = getLivePreviewParseSettings(settings);
+  const columnGap = alignment.keyRight ? settings.horizontalPadding : 0;
 
   for (const line of list.lines) {
-    const pieces = splitKeyValueLine(line, lineRegex, parseSettings);
+    const pieces = splitKeyValueLine(line, parseSettings);
     if (!pieces) continue;
 
     const valueWidth = measureTextWidth(pieces.value, font);
     const rowWidth =
-      keyWidth + valueWidth + settings.horizontalPadding * 2;
+      keyWidth + valueWidth + settings.horizontalPadding * 2 + columnGap;
     maxRowWidth = Math.max(maxRowWidth, rowWidth);
   }
 
@@ -299,23 +309,6 @@ function isLivePreviewActive(state: EditorState): boolean {
   } catch {
     return false;
   }
-}
-
-function isFileExcluded(
-  plugin: KeyValueListPlugin,
-  file: TFile | null
-): boolean {
-  if (!file) return false;
-
-  const cache = plugin.app.metadataCache.getFileCache(file);
-  const frontmatter = cache?.frontmatter;
-  if (!frontmatter) return false;
-
-  const classes = frontmatter.cssclasses ?? frontmatter.cssclass;
-  if (!classes) return false;
-
-  const classList = Array.isArray(classes) ? classes : [classes];
-  return classList.includes("nokeyvalue");
 }
 
 export function registerLivePreview(plugin: KeyValueListPlugin): void {
@@ -348,7 +341,7 @@ export function registerLivePreview(plugin: KeyValueListPlugin): void {
         }
 
         private buildDecorations(view: EditorView): DecorationSet {
-          if (!plugin.settings.activeInEditMode || !isLivePreviewActive(view.state)) {
+          if (!isLivePreviewActive(view.state)) {
             return Decoration.none;
           }
 
@@ -359,7 +352,15 @@ export function registerLivePreview(plugin: KeyValueListPlugin): void {
             return Decoration.none;
           }
 
-          if (isFileExcluded(plugin, file)) {
+          if (
+            !file ||
+            !isActiveForFile(
+              plugin.app,
+              file.path,
+              "edit",
+              plugin.settings
+            )
+          ) {
             return Decoration.none;
           }
 
@@ -368,8 +369,7 @@ export function registerLivePreview(plugin: KeyValueListPlugin): void {
             return Decoration.none;
           }
 
-          const delimiters = parseDelimiters(plugin.settings.delimiter);
-          const lineRegex = buildKeyValueLineRegex(delimiters);
+          const lineRegex = buildKeyValueLineRegex(plugin.settings);
           const doc = view.state.doc;
           const fromLine = doc.lineAt(view.viewport.from).number;
           const toLine = doc.lineAt(view.viewport.to).number;
@@ -396,21 +396,24 @@ export function registerLivePreview(plugin: KeyValueListPlugin): void {
           const builder = new RangeSetBuilder<Decoration>();
 
           for (const list of lists) {
+            const listAlignment = resolveListAlignment(
+              list.lines,
+              plugin.settings
+            );
             const { width: keyWidth, needsWrap: needsKeyWrap } =
               computeListKeyWidth(
                 list,
-                lineRegex,
                 plugin.settings,
                 font,
                 contentWidth
               );
             const listRowWidth = computeListRowWidth(
               list,
-              lineRegex,
               plugin.settings,
               font,
               keyWidth,
-              contentWidth
+              contentWidth,
+              listAlignment
             );
 
             for (
@@ -432,9 +435,9 @@ export function registerLivePreview(plugin: KeyValueListPlugin): void {
                     keyWidth,
                     listRowWidth,
                     needsKeyWrap,
+                    listAlignment,
                     path,
-                    plugin.settings,
-                    lineRegex
+                    plugin.settings
                   ),
                 })
               );
