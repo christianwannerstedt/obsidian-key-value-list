@@ -2,12 +2,8 @@ import { App, MarkdownPostProcessorContext } from "obsidian";
 import { isActiveForFile } from "./css-classes";
 import KeyValueListPlugin from "./main";
 import { KeyValueListPluginSettings } from "./settings";
-import {
-  buildKeyValueRegex,
-  isKeyValueListText,
-  parseDelimiters,
-} from "./parser";
-import { renderKeyValueList } from "./renderer";
+import { buildKeyValueRegex, isKeyValueListText } from "./parser";
+import { renderKeyValueList, getReadingViewContentWidth } from "./renderer";
 
 export function registerPostProcessor(plugin: KeyValueListPlugin): void {
   plugin.registerMarkdownPostProcessor((element, context) => {
@@ -15,9 +11,7 @@ export function registerPostProcessor(plugin: KeyValueListPlugin): void {
       return;
     }
 
-    const regex = buildKeyValueRegex(
-      parseDelimiters(plugin.settings.delimiter)
-    );
+    const regex = buildKeyValueRegex(plugin.settings);
 
     for (const listElement of element.findAll("ul")) {
       if (listElement.closest("pre")) continue;
@@ -31,7 +25,13 @@ export function registerPostProcessor(plugin: KeyValueListPlugin): void {
       const texts = listItems.map((item) => item.innerText.trim());
       if (!isKeyValueListText(texts, regex)) continue;
 
-      listElement.replaceWith(renderKeyValueList(listItems, plugin.settings));
+      listElement.replaceWith(
+        renderKeyValueList(
+          listItems,
+          plugin.settings,
+          getReadingViewContentWidth(listElement)
+        )
+      );
     }
   });
 }

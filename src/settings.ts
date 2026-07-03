@@ -16,6 +16,8 @@ export interface KeyValueListPluginSettings {
   displayBullet: boolean;
   displayBulletChar: string;
   delimiter: string;
+  keyRightAlignChar: string;
+  valueRightAlignChar: string;
   displayDelimiter: boolean;
   maxKeyWidth: number;
   verticalPadding: number;
@@ -35,6 +37,8 @@ export const DEFAULT_SETTINGS: KeyValueListPluginSettings = {
   displayBullet: false,
   displayBulletChar: "-",
   delimiter: ":",
+  keyRightAlignChar: ";",
+  valueRightAlignChar: ";",
   displayDelimiter: true,
   maxKeyWidth: 50,
   verticalPadding: 3,
@@ -139,6 +143,38 @@ export class SettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.delimiter)
           .onChange(async (value) => {
             this.plugin.settings.delimiter = value;
+            await this.plugin.saveSettings();
+            this.plugin.refresh();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Key right-align marker")
+      .setDesc(
+        "Character(s) placed immediately before the delimiter to right-align keys in a list. Put this marker on the first row only; following rows use the plain delimiter. Leave empty to disable."
+      )
+      .addText((text: TextComponent) =>
+        text
+          .setPlaceholder(DEFAULT_SETTINGS.keyRightAlignChar)
+          .setValue(this.plugin.settings.keyRightAlignChar)
+          .onChange(async (value) => {
+            this.plugin.settings.keyRightAlignChar = value;
+            await this.plugin.saveSettings();
+            this.plugin.refresh();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Value right-align marker")
+      .setDesc(
+        "Character(s) placed immediately after the delimiter to right-align values in a list. Put this marker on the first row only; following rows use the plain delimiter. Leave empty to disable."
+      )
+      .addText((text: TextComponent) =>
+        text
+          .setPlaceholder(DEFAULT_SETTINGS.valueRightAlignChar)
+          .setValue(this.plugin.settings.valueRightAlignChar)
+          .onChange(async (value) => {
+            this.plugin.settings.valueRightAlignChar = value;
             await this.plugin.saveSettings();
             this.plugin.refresh();
           })

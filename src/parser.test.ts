@@ -2,9 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   buildKeyValueLineRegex,
   buildKeyValueRegex,
+  detectLineAlignment,
+  detectTextAlignment,
   isKeyValueListText,
   isKeyValueText,
   parseDelimiters,
+  parseSeparatorAlignment,
+  resolveListAlignment,
   splitKeyValueLine,
 } from "./parser";
 import type { KeyValueListPluginSettings } from "./settings";
@@ -15,6 +19,8 @@ const settings: KeyValueListPluginSettings = {
   displayBullet: false,
   displayBulletChar: "-",
   delimiter: ":",
+  keyRightAlignChar: "",
+  valueRightAlignChar: "",
   displayDelimiter: true,
   maxKeyWidth: 50,
   verticalPadding: 3,
@@ -28,6 +34,12 @@ const settings: KeyValueListPluginSettings = {
   valueColor: "",
 };
 
+const alignSettings: KeyValueListPluginSettings = {
+  ...settings,
+  keyRightAlignChar: ";",
+  valueRightAlignChar: ";",
+};
+
 describe("parseDelimiters", () => {
   it("trims delimiters and removes empty entries", () => {
     expect(parseDelimiters(" :, ::, , => ")).toEqual([":", "::", "=>"]);
@@ -35,7 +47,7 @@ describe("parseDelimiters", () => {
 });
 
 describe("key-value text matching", () => {
-  const regex = buildKeyValueRegex(parseDelimiters(":, ::"));
+  const regex = buildKeyValueRegex({ ...settings, delimiter: ":, ::" });
 
   it("matches key-value rows with configured delimiters", () => {
     expect(isKeyValueText("Name: Alice", regex)).toBe(true);
@@ -56,10 +68,8 @@ describe("key-value text matching", () => {
 });
 
 describe("splitKeyValueLine", () => {
-  const lineRegex = buildKeyValueLineRegex(parseDelimiters(":"));
-
   it("splits a markdown list line into key, delimiter, and value", () => {
-    expect(splitKeyValueLine("- Name: Alice", lineRegex, settings)).toEqual({
+    expect(splitKeyValueLine("- Name: Alice", settings)).toEqual({
       key: " Name:",
       delimiter: ":",
       value: "Alice",
@@ -68,7 +78,7 @@ describe("splitKeyValueLine", () => {
 
   it("can omit the delimiter and include a configured bullet", () => {
     expect(
-      splitKeyValueLine("- Name: Alice", lineRegex, {
+      splitKeyValueLine("- Name: Alice", {
         ...settings,
         displayBullet: true,
         displayBulletChar: "*",
@@ -82,7 +92,7 @@ describe("splitKeyValueLine", () => {
   });
 
   it("escapes Obsidian footnote references in values", () => {
-    expect(splitKeyValueLine("- Note: value[^1]", lineRegex, settings)).toEqual({
+    expect(splitKeyValueLine("- Note: value[^1]", settings)).toEqual({
       key: " Note:",
       delimiter: ":",
       value: "value\\^1",
@@ -90,6 +100,75 @@ describe("splitKeyValueLine", () => {
   });
 
   it("returns null for non key-value list lines", () => {
-    expect(splitKeyValueLine("- plain bullet", lineRegex, settings)).toBeNull();
+    expect(splitKeyValueLine("- plain bullet", settings)).toBeNull();
+  });
+});
+
+describe("alignment markers", () => {
+  it("detects key and value alignment from separator markers", () => {
+    expect(parseSeparatorAlignment(":;", alignSettings)).toEqual({
+      keyRight: false,
+      valueRight: true,
+    });
+    expect(parseSeparatorAlignment(";:;", alignSettings)).toEqual({
+      keyRight: true,
+      valueRight: true,
+    });
+    expect(parseSeparatorAlignment(";", alignSettings)).toEqual({
+      keyRight: false,
+      valueRight: false,
+    });
+  });
+
+  it("detects alignment from the first list row only", () => {
+    expect(
+      resolveListAlignment(
+        ["- Total;:; 100", "- Tax: 25", "- Due: 125"],
+        alignSettings
+      )
+    ).toEqual({
+      keyRight: true,
+      valueRight: true,
+    });
+  });
+
+  it("parses aligned first rows and plain following rows", () => {
+    expect(
+      splitKeyValueLine("- Total;:; 100", alignSettings)
+    ).toEqual({
+      key: " Total:",
+      delimiter: ":",
+      value: "100",
+    });
+    expect(splitKeyValueLine("- Tax: 25", alignSettings)).toEqual({
+      key: " Tax:",
+      delimiter: ":",
+      value: "25",
+    });
+  });
+
+  it("detects alignment from markdown lines and rendered text", () => {
+    expect(detectLineAlignment("- Label;: Value", alignSettings)).toEqual({
+      keyRight: true,
+      valueRight: false,
+    });
+    expect(detectTextAlignment("Label;: Value", alignSettings)).toEqual({
+      keyRight: true,
+      valueRight: false,
+    });
+  });
+
+  it("treats alignment markers as key text when markers are disabled", () => {
+    expect(splitKeyValueLine("- Test;: 123", settings)).toEqual({
+      key: " Test;:",
+      delimiter: ":",
+      value: "123",
+    });
+  });
+
+  it("matches lists where only the first row contains alignment markers", () => {
+    const regex = buildKeyValueLineRegex(alignSettings);
+    expect(isKeyValueText("- Total;:; 100", regex)).toBe(true);
+    expect(isKeyValueText("- Tax: 25", regex)).toBe(true);
   });
 });

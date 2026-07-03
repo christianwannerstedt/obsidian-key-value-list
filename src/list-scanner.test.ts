@@ -1,14 +1,36 @@
 import { Text } from "@codemirror/state";
 import { describe, expect, it } from "vitest";
-import { buildKeyValueLineRegex, parseDelimiters } from "./parser";
+import { buildKeyValueLineRegex } from "./parser";
 import { scanKeyValueLists } from "./list-scanner";
+import type { KeyValueListPluginSettings } from "./settings";
+
+const settings: KeyValueListPluginSettings = {
+  activeInEditMode: true,
+  activeInReadMode: true,
+  displayBullet: false,
+  displayBulletChar: "-",
+  delimiter: ":",
+  keyRightAlignChar: "",
+  valueRightAlignChar: "",
+  displayDelimiter: true,
+  maxKeyWidth: 50,
+  verticalPadding: 3,
+  horizontalPadding: 12,
+  boldKey: true,
+  stripedBackgroundType: "default",
+  stripedBackgroundColor: "",
+  isKeyColored: false,
+  keyColor: "",
+  isValueColored: false,
+  valueColor: "",
+};
 
 function doc(lines: string[]): Text {
   return Text.of(lines);
 }
 
 describe("scanKeyValueLists", () => {
-  const lineRegex = buildKeyValueLineRegex(parseDelimiters(":"));
+  const lineRegex = buildKeyValueLineRegex(settings);
 
   it("finds contiguous key-value list blocks", () => {
     const markdown = doc([
