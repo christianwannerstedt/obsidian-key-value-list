@@ -60,6 +60,7 @@ class KvlRowWidget extends WidgetType {
     private readonly rowIndex: number,
     private readonly keyWidth: number,
     private readonly listRowWidth: number,
+    private readonly needsKeyWrap: boolean,
     private readonly path: string,
     private readonly settings: KeyValueListPluginSettings,
     private readonly lineRegex: RegExp
@@ -75,6 +76,7 @@ class KvlRowWidget extends WidgetType {
       this.rowIndex === other.rowIndex &&
       this.keyWidth === other.keyWidth &&
       this.listRowWidth === other.listRowWidth &&
+      this.needsKeyWrap === other.needsKeyWrap &&
       this.path === other.path &&
       this.renderKey === other.renderKey
     );
@@ -97,7 +99,13 @@ class KvlRowWidget extends WidgetType {
     row.classList.add(
       this.rowIndex % 2 === 0 ? "kvl-row-odd" : "kvl-row-even"
     );
-    applyRowStyles(row, this.settings, this.keyWidth, this.listRowWidth);
+    applyRowStyles(
+      row,
+      this.settings,
+      this.keyWidth,
+      this.listRowWidth,
+      this.needsKeyWrap
+    );
 
     const keyCell = document.createElement("span");
     keyCell.className = "kvl-key";
@@ -150,12 +158,17 @@ function applyRowStyles(
   row: HTMLElement,
   settings: KeyValueListPluginSettings,
   keyWidth: number,
-  listRowWidth: number
+  listRowWidth: number,
+  needsKeyWrap: boolean
 ): void {
   row.style.setProperty("--kvl-v-pad", `${settings.verticalPadding}px`);
   row.style.setProperty("--kvl-h-pad", `${settings.horizontalPadding}px`);
   row.style.setProperty("--kvl-key-width", `${keyWidth}px`);
   row.style.setProperty("--kvl-row-width", `${listRowWidth}px`);
+
+  if (needsKeyWrap) {
+    row.classList.add("kvl-key-wrap");
+  }
 
   if (settings.isKeyColored && settings.keyColor) {
     row.style.setProperty("--kvl-key-color", settings.keyColor);
@@ -183,13 +196,18 @@ function applyRowStyles(
   }
 }
 
+interface ListKeyWidth {
+  width: number;
+  needsWrap: boolean;
+}
+
 function computeListKeyWidth(
   list: ScannedList,
   lineRegex: RegExp,
   settings: KeyValueListPluginSettings,
   font: string,
   contentWidth: number
-): number {
+): ListKeyWidth {
   let max = 0;
 
   for (const line of list.lines) {
@@ -199,13 +217,17 @@ function computeListKeyWidth(
     }
   }
 
-  const keyWidth = Math.ceil(max) + 2;
+  const naturalWidth = Math.ceil(max) + 2;
   if (settings.maxKeyWidth <= 0) {
-    return keyWidth;
+    return { width: naturalWidth, needsWrap: false };
   }
 
   const cap = Math.floor((settings.maxKeyWidth / 100) * contentWidth);
-  return Math.min(keyWidth, cap);
+  if (naturalWidth > cap) {
+    return { width: cap, needsWrap: true };
+  }
+
+  return { width: naturalWidth, needsWrap: false };
 }
 
 function computeListRowWidth(
@@ -224,7 +246,8 @@ function computeListRowWidth(
     if (!pieces) continue;
 
     const valueWidth = measureTextWidth(pieces.value, font);
-    const rowWidth = keyWidth + settings.horizontalPadding + valueWidth;
+    const rowWidth =
+      keyWidth + valueWidth + settings.horizontalPadding * 2;
     maxRowWidth = Math.max(maxRowWidth, rowWidth);
   }
 
@@ -314,13 +337,14 @@ export function registerLivePreview(plugin: KeyValueListPlugin): void {
           const builder = new RangeSetBuilder<Decoration>();
 
           for (const list of lists) {
-            const keyWidth = computeListKeyWidth(
-              list,
-              lineRegex,
-              plugin.settings,
-              font,
-              contentWidth
-            );
+            const { width: keyWidth, needsWrap: needsKeyWrap } =
+              computeListKeyWidth(
+                list,
+                lineRegex,
+                plugin.settings,
+                font,
+                contentWidth
+              );
             const listRowWidth = computeListRowWidth(
               list,
               lineRegex,
@@ -348,6 +372,7 @@ export function registerLivePreview(plugin: KeyValueListPlugin): void {
                     lineNumber - list.startLine,
                     keyWidth,
                     listRowWidth,
+                    needsKeyWrap,
                     path,
                     plugin.settings,
                     lineRegex

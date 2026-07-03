@@ -48,7 +48,11 @@ function applyListStyles(
 ): void {
   list.style.setProperty("--kvl-v-pad", `${settings.verticalPadding}px`);
   list.style.setProperty("--kvl-h-pad", `${settings.horizontalPadding}px`);
-  list.style.setProperty("--kvl-max-key-width", `${settings.maxKeyWidth}%`);
+
+  if (settings.maxKeyWidth > 0) {
+    list.style.setProperty("--kvl-max-key-width", `${settings.maxKeyWidth}%`);
+    list.classList.add("kvl-key-limited");
+  }
 
   if (settings.isKeyColored && settings.keyColor) {
     list.style.setProperty("--kvl-key-color", settings.keyColor);

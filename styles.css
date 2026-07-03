@@ -19,9 +19,13 @@
 }
 
 .kvl-list .kvl-key {
-    max-width: var(--kvl-max-key-width, 50%);
     white-space: nowrap;
-    padding-right: calc(var(--kvl-h-pad, 12px) * 2);
+}
+
+.kvl-list.kvl-key-limited .kvl-key {
+    max-width: var(--kvl-max-key-width);
+    white-space: normal;
+    overflow-wrap: break-word;
 }
 
 .kvl-list.kvl-key-colored .kvl-key {
@@ -52,16 +56,21 @@
     vertical-align: top;
     box-sizing: border-box;
     width: var(--kvl-row-width, auto);
-    padding: var(--kvl-v-pad, 3px) 0;
+    padding: var(--kvl-v-pad, 3px) var(--kvl-h-pad, 12px);
 }
 
 .kvl-live-row .kvl-key {
     display: inline-block;
     flex: 0 0 auto;
     min-width: var(--kvl-key-width, auto);
-    padding-right: var(--kvl-h-pad, 12px);
     white-space: nowrap;
     vertical-align: top;
+}
+
+.kvl-live-row.kvl-key-wrap .kvl-key {
+    max-width: var(--kvl-key-width, auto);
+    white-space: normal;
+    overflow-wrap: break-word;
 }
 
 .kvl-live-row .kvl-value {
