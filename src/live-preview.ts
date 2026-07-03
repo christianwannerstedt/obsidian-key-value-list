@@ -51,6 +51,16 @@ function buildRenderKey(
   return JSON.stringify(settings) + lineRegex.source + lineRegex.flags;
 }
 
+function getLivePreviewParseSettings(
+  settings: KeyValueListPluginSettings
+): KeyValueListPluginSettings {
+  return {
+    ...settings,
+    displayBullet: false,
+    displayDelimiter: false,
+  };
+}
+
 class KvlRowWidget extends WidgetType {
   private readonly renderKey: string;
 
@@ -83,11 +93,11 @@ class KvlRowWidget extends WidgetType {
   }
 
   toDOM(): HTMLElement {
-    const pieces = splitKeyValueLine(this.lineText, this.lineRegex, {
-      ...this.settings,
-      displayBullet: false,
-      displayDelimiter: false,
-    });
+    const pieces = splitKeyValueLine(
+      this.lineText,
+      this.lineRegex,
+      getLivePreviewParseSettings(this.settings)
+    );
     if (!pieces) {
       const fallback = document.createElement("span");
       fallback.textContent = this.lineText;
@@ -201,6 +211,24 @@ interface ListKeyWidth {
   needsWrap: boolean;
 }
 
+function measureRenderedKeyWidth(
+  pieces: KeyValuePiece,
+  settings: KeyValueListPluginSettings,
+  font: string
+): number {
+  let width = measureTextWidth(pieces.key, font);
+
+  if (settings.displayBullet) {
+    width += measureTextWidth(`${settings.displayBulletChar} `, font);
+  }
+
+  if (settings.displayDelimiter) {
+    width += measureTextWidth(pieces.delimiter, font);
+  }
+
+  return width;
+}
+
 function computeListKeyWidth(
   list: ScannedList,
   lineRegex: RegExp,
@@ -209,11 +237,12 @@ function computeListKeyWidth(
   contentWidth: number
 ): ListKeyWidth {
   let max = 0;
+  const parseSettings = getLivePreviewParseSettings(settings);
 
   for (const line of list.lines) {
-    const pieces = splitKeyValueLine(line, lineRegex, settings);
+    const pieces = splitKeyValueLine(line, lineRegex, parseSettings);
     if (pieces) {
-      max = Math.max(max, measureTextWidth(pieces.key, font));
+      max = Math.max(max, measureRenderedKeyWidth(pieces, settings, font));
     }
   }
 
@@ -240,9 +269,10 @@ function computeListRowWidth(
 ): number {
   const maxAvailable = contentWidth - LIST_INDENT_PX;
   let maxRowWidth = 0;
+  const parseSettings = getLivePreviewParseSettings(settings);
 
   for (const line of list.lines) {
-    const pieces = splitKeyValueLine(line, lineRegex, settings);
+    const pieces = splitKeyValueLine(line, lineRegex, parseSettings);
     if (!pieces) continue;
 
     const valueWidth = measureTextWidth(pieces.value, font);
