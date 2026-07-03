@@ -12,20 +12,21 @@ export function scanKeyValueLists(
   doc: Text,
   fromLine: number,
   toLine: number,
-  keyValueLineRegex: RegExp
+  keyValueLineRegex: RegExp,
+  shouldSkipLine?: (lineNumber: number) => boolean
 ): ScannedList[] {
   const lists: ScannedList[] = [];
   let lineNumber = fromLine;
 
   while (lineNumber <= toLine) {
     const line = doc.line(lineNumber);
-    if (!LIST_LINE.test(line.text)) {
+    if (!LIST_LINE.test(line.text) || shouldSkipLine?.(lineNumber)) {
       lineNumber++;
       continue;
     }
 
-    const listStart = findListStart(doc, lineNumber);
-    const listEnd = findListEnd(doc, lineNumber);
+    const listStart = findListStart(doc, lineNumber, shouldSkipLine);
+    const listEnd = findListEnd(doc, lineNumber, shouldSkipLine);
     const lines: string[] = [];
     let isKeyValueList = true;
 
@@ -47,22 +48,34 @@ export function scanKeyValueLists(
   return lists;
 }
 
-function findListStart(doc: Text, lineNumber: number): number {
+function findListStart(
+  doc: Text,
+  lineNumber: number,
+  shouldSkipLine?: (lineNumber: number) => boolean
+): number {
   let start = lineNumber;
   while (start > 1) {
-    const prev = doc.line(start - 1);
+    const prevLineNumber = start - 1;
+    if (shouldSkipLine?.(prevLineNumber)) break;
+    const prev = doc.line(prevLineNumber);
     if (!LIST_LINE.test(prev.text)) break;
-    start--;
+    start = prevLineNumber;
   }
   return start;
 }
 
-function findListEnd(doc: Text, lineNumber: number): number {
+function findListEnd(
+  doc: Text,
+  lineNumber: number,
+  shouldSkipLine?: (lineNumber: number) => boolean
+): number {
   let end = lineNumber;
   while (end < doc.lines) {
-    const next = doc.line(end + 1);
+    const nextLineNumber = end + 1;
+    if (shouldSkipLine?.(nextLineNumber)) break;
+    const next = doc.line(nextLineNumber);
     if (!LIST_LINE.test(next.text)) break;
-    end++;
+    end = nextLineNumber;
   }
   return end;
 }

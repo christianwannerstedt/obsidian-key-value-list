@@ -10,6 +10,7 @@ import {
 } from "@codemirror/view";
 import { App, Editor, MarkdownRenderer, MarkdownView, TFile, editorInfoField } from "obsidian";
 import KeyValueListPlugin from "./main";
+import { getFencedCodeBlockLines } from "./code-context";
 import { ScannedList, scanKeyValueLists } from "./list-scanner";
 import {
   buildKeyValueLineRegex,
@@ -352,7 +353,14 @@ export function registerLivePreview(plugin: KeyValueListPlugin): void {
           const fromLine = doc.lineAt(view.viewport.from).number;
           const toLine = doc.lineAt(view.viewport.to).number;
           const cursorLine = doc.lineAt(view.state.selection.main.head).number;
-          const lists = scanKeyValueLists(doc, fromLine, toLine, lineRegex);
+          const codeBlockLines = getFencedCodeBlockLines(doc, toLine);
+          const lists = scanKeyValueLists(
+            doc,
+            fromLine,
+            toLine,
+            lineRegex,
+            (lineNumber) => codeBlockLines.has(lineNumber)
+          );
 
           if (lists.length === 0) {
             return Decoration.none;

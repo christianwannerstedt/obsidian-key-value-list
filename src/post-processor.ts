@@ -19,6 +19,8 @@ export function registerPostProcessor(plugin: KeyValueListPlugin): void {
     );
 
     for (const listElement of element.findAll("ul")) {
+      if (listElement.closest("pre")) continue;
+
       const listItems = Array.from(
         listElement.querySelectorAll(":scope > li")
       ) as HTMLElement[];
