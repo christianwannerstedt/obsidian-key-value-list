@@ -1,4 +1,4 @@
-import { RangeSetBuilder, StateEffect } from "@codemirror/state";
+import { EditorState, RangeSetBuilder, StateEffect } from "@codemirror/state";
 import {
   Decoration,
   DecorationSet,
@@ -8,7 +8,15 @@ import {
   ViewUpdate,
   WidgetType,
 } from "@codemirror/view";
-import { App, Editor, MarkdownRenderer, MarkdownView, TFile, editorInfoField } from "obsidian";
+import {
+  App,
+  Editor,
+  MarkdownRenderer,
+  MarkdownView,
+  TFile,
+  editorInfoField,
+  editorLivePreviewField,
+} from "obsidian";
 import KeyValueListPlugin from "./main";
 import { getFencedCodeBlockLines } from "./code-context";
 import { ScannedList, scanKeyValueLists } from "./list-scanner";
@@ -285,6 +293,14 @@ function computeListRowWidth(
   return Math.min(Math.ceil(maxRowWidth), maxAvailable);
 }
 
+function isLivePreviewActive(state: EditorState): boolean {
+  try {
+    return state.field(editorLivePreviewField);
+  } catch {
+    return false;
+  }
+}
+
 function isFileExcluded(
   plugin: KeyValueListPlugin,
   file: TFile | null
@@ -313,7 +329,12 @@ export function registerLivePreview(plugin: KeyValueListPlugin): void {
         }
 
         update(update: ViewUpdate): void {
+          const livePreviewChanged =
+            isLivePreviewActive(update.startState) !==
+            isLivePreviewActive(update.state);
+
           if (
+            livePreviewChanged ||
             update.docChanged ||
             update.viewportChanged ||
             update.selectionSet ||
@@ -327,7 +348,7 @@ export function registerLivePreview(plugin: KeyValueListPlugin): void {
         }
 
         private buildDecorations(view: EditorView): DecorationSet {
-          if (!plugin.settings.activeInEditMode) {
+          if (!plugin.settings.activeInEditMode || !isLivePreviewActive(view.state)) {
             return Decoration.none;
           }
 
