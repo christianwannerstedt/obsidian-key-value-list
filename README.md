@@ -13,8 +13,10 @@ To create a key value list, all you need to do is to make sure the list row cont
 ```
 
 This plugin will recognize these lists automatically and apply some basic formatting:
-- A fixed width of the key node, so that values are all aligned properly. The width will be calculated for every list specifically, to make sure it is displayed in the best way.
+- A fixed width of the key column, so that values are all aligned properly. The width is calculated per list by the browser layout engine.
 - Apply a background color to every other line in the list, to make it easier to read.
+
+The plugin works in **Reading view** (markdown post-processor) and **Live Preview** (editor extension). In Source mode, lists are shown as plain markdown without formatting.
 
 ## Preview
 Here's a brief demonstration of the plugin in action::
@@ -37,8 +39,6 @@ It is possible to choose whether the plugin should be active for individual file
 
 ## Notes
 In order for a list to be considered a Key-Value list by this plugin, EVERY row, must contain a key value pair. If one or more rows don't contain a key-value pair, the list will be ignored by the plugin.
-
-After a list has been edited, there is a possibility that there may be a one-render round delay until the background width is set correctly for the list.
 
 ## Install
 

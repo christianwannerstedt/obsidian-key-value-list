@@ -63,8 +63,8 @@ export class SettingTab extends PluginSettingTab {
     const foldablePadding = 42;
 
     new Setting(containerEl)
-      .setName("Active in edit mode")
-      .setDesc("If the plugin should be active in edit mode")
+      .setName("Active in Live Preview")
+      .setDesc("If the plugin should be active in Live Preview (edit mode)")
       .addToggle((toggle: ToggleComponent) =>
         toggle
           .setValue(this.plugin.settings.activeInEditMode)

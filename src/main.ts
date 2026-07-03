@@ -1,35 +1,32 @@
 import { MarkdownView, Plugin } from "obsidian";
-import { KeyValueList } from "src/key-value-list";
-
 import {
   DEFAULT_SETTINGS,
   KeyValueListPluginSettings,
   SettingTab,
 } from "./settings";
-import { ListParser } from "./list-parser";
+import { registerPostProcessor } from "./post-processor";
+import {
+  refreshLivePreviewDecorations,
+  registerLivePreview,
+} from "./live-preview";
 
 export default class KeyValueListPlugin extends Plugin {
   settings: KeyValueListPluginSettings;
-  parser: ListParser;
 
   async onload() {
     await this.loadSettings();
-    this.parser = new ListParser(this);
-    new KeyValueList(this, this.parser).load();
-
-    // Add a settings tab
     this.addSettingTab(new SettingTab(this.app, this));
+    registerPostProcessor(this);
+    registerLivePreview(this);
 
     this.registerEvent(
       this.app.metadataCache.on("changed", () => {
-        this.renderPreviewMode();
+        this.rerender();
       })
     );
   }
 
-  renderPreviewMode() {
-    // Trigger a re-render of the current note when the settings change
-    // to force the registerMarkdownPostProcessor to reprocess the Markdown.
+  rerender() {
     const view = this.app.workspace.getActiveViewOfType(MarkdownView);
     if (view) {
       view.previewMode.rerender(true);
@@ -38,8 +35,8 @@ export default class KeyValueListPlugin extends Plugin {
 
   refresh() {
     this.app.workspace.updateOptions();
-    this.parser.update();
-    this.renderPreviewMode();
+    this.rerender();
+    refreshLivePreviewDecorations(this.app);
   }
 
   onunload() {}
