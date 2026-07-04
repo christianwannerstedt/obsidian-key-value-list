@@ -1,46 +1,61 @@
 import { KeyValueListPluginSettings } from "./settings";
+import { KeyValueRow, getLiDirectText } from "./list-tree";
 import {
   ListAlignment,
   resolveListAlignmentFromTexts,
   splitKeyValueFromLi,
 } from "./parser";
 
+export const NEST_INDENT_PX = 24;
+
 export function renderKeyValueList(
-  listItems: HTMLElement[],
+  rows: KeyValueRow[],
   settings: KeyValueListPluginSettings,
   contentWidth = 0
 ): HTMLDivElement {
-  const texts = listItems.map((item) => item.innerText.trim());
+  const texts = rows.map((row) => getLiDirectText(row.listItem));
   const alignment = resolveListAlignmentFromTexts(texts, settings);
   const list = document.createElement("div");
   list.classList.add("kvl-list");
   applyListStyles(list, settings, alignment, contentWidth);
 
-  listItems.forEach((listItem, index) => {
-    const pieces = splitKeyValueFromLi(listItem, settings);
+  rows.forEach((row, index) => {
+    const pieces = splitKeyValueFromLi(row.listItem, settings);
     if (!pieces) return;
 
-    const row = document.createElement("div");
-    row.classList.add("kvl-row");
-    row.classList.add(index % 2 === 0 ? "kvl-row-odd" : "kvl-row-even");
+    const rowElement = document.createElement("div");
+    rowElement.classList.add("kvl-row");
+    rowElement.classList.add(index % 2 === 0 ? "kvl-row-odd" : "kvl-row-even");
+    applyRowDepth(rowElement, row.depth);
 
     if (
       index % 2 === 1 &&
       settings.stripedBackgroundType === "custom" &&
       settings.stripedBackgroundColor
     ) {
-      row.style.setProperty(
+      rowElement.style.setProperty(
         "--kvl-stripe-bg",
         settings.stripedBackgroundColor
       );
     }
 
-    row.appendChild(createKeyCell(pieces, settings));
-    row.appendChild(createValueCell(pieces, settings));
-    list.appendChild(row);
+    rowElement.appendChild(createKeyCell(pieces, settings));
+    rowElement.appendChild(createValueCell(pieces, settings));
+    list.appendChild(rowElement);
   });
 
   return list;
+}
+
+export function applyRowDepth(row: HTMLElement, depth: number): void {
+  if (depth <= 0) return;
+
+  row.classList.add("kvl-nested");
+  row.style.setProperty("--kvl-depth", String(depth));
+  row.style.setProperty(
+    "--kvl-nest-indent",
+    `${depth * NEST_INDENT_PX}px`
+  );
 }
 
 function applyListStyles(

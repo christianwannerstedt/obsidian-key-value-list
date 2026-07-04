@@ -6,6 +6,40 @@ export interface ScannedList {
   startLine: number;
   endLine: number;
   lines: string[];
+  depths: number[];
+}
+
+export function measureLineIndent(text: string): number {
+  const match = text.match(/^([ \t]*)/);
+  if (!match) return 0;
+  return match[1].replace(/\t/g, "  ").length;
+}
+
+export function computeLineDepths(lines: string[]): number[] {
+  if (lines.length === 0) return [];
+
+  const indents = lines.map(measureLineIndent);
+  const baseIndent = indents[0];
+  const step = detectIndentStep(indents, baseIndent);
+
+  return indents.map((indent) =>
+    Math.max(0, Math.round((indent - baseIndent) / step))
+  );
+}
+
+function detectIndentStep(indents: number[], baseIndent: number): number {
+  const deeperIndents = [...new Set(indents)]
+    .filter((indent) => indent > baseIndent)
+    .sort((a, b) => a - b);
+
+  if (deeperIndents.length === 0) return 2;
+
+  let minDiff = deeperIndents[0] - baseIndent;
+  for (let i = 1; i < deeperIndents.length; i++) {
+    minDiff = Math.min(minDiff, deeperIndents[i] - deeperIndents[i - 1]);
+  }
+
+  return minDiff;
 }
 
 export function scanKeyValueLists(
@@ -39,7 +73,12 @@ export function scanKeyValueLists(
     }
 
     if (isKeyValueList && lines.length > 0) {
-      lists.push({ startLine: listStart, endLine: listEnd, lines });
+      lists.push({
+        startLine: listStart,
+        endLine: listEnd,
+        lines,
+        depths: computeLineDepths(lines),
+      });
     }
 
     lineNumber = listEnd + 1;

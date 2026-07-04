@@ -61,6 +61,10 @@
     background-color: var(--kvl-stripe-bg, var(--background-secondary));
 }
 
+.kvl-list .kvl-row.kvl-nested .kvl-key {
+    padding-left: var(--kvl-nest-indent, 0);
+}
+
 /* Live Preview: hide native list markers on formatted rows */
 .cm-line:has(> .kvl-live-row) .cm-formatting-list-ul,
 .cm-line:has(> .kvl-live-row) .cm-formatting-list {
@@ -115,6 +119,10 @@
 .kvl-live-row.kvl-key-colored .kvl-key-inner,
 .kvl-live-row.kvl-key-colored .kvl-key-inner * {
     color: var(--kvl-key-color, inherit);
+}
+
+.kvl-live-row.kvl-nested {
+    margin-left: var(--kvl-nest-indent, 0);
 }
 
 .kvl-live-row.kvl-value-colored .kvl-value,

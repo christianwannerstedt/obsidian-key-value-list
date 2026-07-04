@@ -63,7 +63,9 @@ The first row sets alignment for the entire list. Following rows use the plain d
 Leave either marker setting empty to disable that alignment option.
 
 ## Notes
-In order for a list to be considered a Key-Value list by this plugin, EVERY row, must contain a key value pair. If one or more rows don't contain a key-value pair, the list will be ignored by the plugin.
+In order for a list to be considered a Key-Value list by this plugin, every list item at every nesting level must contain a key-value pair. If one or more rows don't contain a key-value pair, the list will be ignored by the plugin.
+
+Nested lists are supported. Indent child rows under a parent item in markdown and the plugin will render them as an indented key-value table in both Live Preview and Reading view.
 
 ## Install
 
