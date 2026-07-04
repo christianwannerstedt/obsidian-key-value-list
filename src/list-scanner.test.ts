@@ -1,7 +1,7 @@
 import { Text } from "@codemirror/state";
 import { describe, expect, it } from "vitest";
 import { buildKeyValueLineRegex } from "./parser";
-import { scanKeyValueLists } from "./list-scanner";
+import { computeLineDepths, scanKeyValueLists } from "./list-scanner";
 import type { KeyValueListPluginSettings } from "./settings";
 
 const settings: KeyValueListPluginSettings = {
@@ -46,11 +46,13 @@ describe("scanKeyValueLists", () => {
         startLine: 2,
         endLine: 3,
         lines: ["- Name: Alice", "- Age: 30"],
+        depths: [0, 0],
       },
       {
         startLine: 5,
         endLine: 5,
         lines: ["- City: Stockholm"],
+        depths: [0],
       },
     ]);
   });
@@ -79,6 +81,7 @@ describe("scanKeyValueLists", () => {
         startLine: 1,
         endLine: 3,
         lines: ["- Name: Alice", "- Age: 30", "- City: Stockholm"],
+        depths: [0, 0, 0],
       },
     ]);
   });
@@ -98,12 +101,39 @@ describe("scanKeyValueLists", () => {
         startLine: 1,
         endLine: 1,
         lines: ["- Name: Alice"],
+        depths: [0],
       },
       {
         startLine: 3,
         endLine: 3,
         lines: ["- Age: 30"],
+        depths: [0],
       },
     ]);
+  });
+
+  it("includes nested list lines in one block with depth metadata", () => {
+    const markdown = doc([
+      "- foo: bar",
+      "   - baz: quux",
+      "   - blah: bang",
+    ]);
+
+    expect(scanKeyValueLists(markdown, 1, markdown.lines, lineRegex)).toEqual([
+      {
+        startLine: 1,
+        endLine: 3,
+        lines: ["- foo: bar", "   - baz: quux", "   - blah: bang"],
+        depths: [0, 1, 1],
+      },
+    ]);
+  });
+});
+
+describe("computeLineDepths", () => {
+  it("derives relative depth from leading indentation", () => {
+    expect(
+      computeLineDepths(["- foo: bar", "   - baz: quux", "      - deep: value"])
+    ).toEqual([0, 1, 2]);
   });
 });

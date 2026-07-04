@@ -29,6 +29,7 @@ import {
   splitKeyValueLine,
 } from "./parser";
 import { getElementFont, measureTextWidth } from "./measure";
+import { applyRowDepth } from "./renderer";
 import { KeyValueListPluginSettings } from "./settings";
 
 // Approximate space used by the list bullet/indent before our widget content.
@@ -76,6 +77,7 @@ class KvlRowWidget extends WidgetType {
     private readonly plugin: KeyValueListPlugin,
     private readonly lineText: string,
     private readonly rowIndex: number,
+    private readonly depth: number,
     private readonly keyWidth: number,
     private readonly listRowWidth: number,
     private readonly needsKeyWrap: boolean,
@@ -92,6 +94,7 @@ class KvlRowWidget extends WidgetType {
       other instanceof KvlRowWidget &&
       this.lineText === other.lineText &&
       this.rowIndex === other.rowIndex &&
+      this.depth === other.depth &&
       this.keyWidth === other.keyWidth &&
       this.listRowWidth === other.listRowWidth &&
       this.needsKeyWrap === other.needsKeyWrap &&
@@ -126,6 +129,7 @@ class KvlRowWidget extends WidgetType {
       this.needsKeyWrap,
       this.listAlignment
     );
+    applyRowDepth(row, this.depth);
 
     const keyCell = document.createElement("span");
     keyCell.className = "kvl-key";
@@ -424,6 +428,7 @@ export function registerLivePreview(plugin: KeyValueListPlugin): void {
               if (lineNumber === cursorLine) continue;
 
               const line = doc.line(lineNumber);
+              const rowIndex = lineNumber - list.startLine;
               builder.add(
                 line.from,
                 line.to,
@@ -431,7 +436,8 @@ export function registerLivePreview(plugin: KeyValueListPlugin): void {
                   widget: new KvlRowWidget(
                     plugin,
                     line.text,
-                    lineNumber - list.startLine,
+                    rowIndex,
+                    list.depths[rowIndex] ?? 0,
                     keyWidth,
                     listRowWidth,
                     needsKeyWrap,

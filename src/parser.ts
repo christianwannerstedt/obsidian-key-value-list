@@ -214,6 +214,7 @@ export function splitKeyValueFromLi(
 ): KeyValuePiece | null {
   const content = listItem.cloneNode(true) as HTMLElement;
   content.querySelectorAll(".list-bullet").forEach((el) => el.remove());
+  content.querySelectorAll(":scope > ul").forEach((el) => el.remove());
   return splitKeyValueHtml(content.innerHTML, settings);
 }
 
