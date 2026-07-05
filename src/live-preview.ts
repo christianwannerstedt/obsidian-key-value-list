@@ -75,6 +75,7 @@ class KvlRowWidget extends WidgetType {
   private readonly renderKey: string;
   private readonly renderComponent = new Component();
   private readonly pendingRenders: Promise<unknown>[] = [];
+  private componentLoaded = false;
 
   constructor(
     private readonly plugin: KeyValueListPlugin,
@@ -109,7 +110,10 @@ class KvlRowWidget extends WidgetType {
   }
 
   toDOM(view: EditorView): HTMLElement {
-    this.renderComponent.load();
+    if (!this.componentLoaded) {
+      this.renderComponent.load();
+      this.componentLoaded = true;
+    }
     const doc = view?.dom?.ownerDocument ?? document;
     const pieces = splitKeyValueLine(
       this.lineText,
@@ -190,7 +194,10 @@ class KvlRowWidget extends WidgetType {
 
   destroy(): void {
     void Promise.all(this.pendingRenders).finally(() => {
-      this.renderComponent.unload();
+      if (this.componentLoaded) {
+        this.renderComponent.unload();
+        this.componentLoaded = false;
+      }
     });
   }
 }
