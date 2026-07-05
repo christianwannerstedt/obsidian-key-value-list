@@ -13,9 +13,10 @@ export function renderKeyValueList(
   settings: KeyValueListPluginSettings,
   contentWidth = 0
 ): HTMLDivElement {
+  const doc = rows[0].listItem.ownerDocument;
   const texts = rows.map((row) => getLiDirectText(row.listItem));
   const alignment = resolveListAlignmentFromTexts(texts, settings);
-  const list = document.createElement("div");
+  const list = doc.createElement("div");
   list.classList.add("kvl-list");
   applyListStyles(list, settings, alignment, contentWidth);
 
@@ -23,7 +24,7 @@ export function renderKeyValueList(
     const pieces = splitKeyValueFromLi(row.listItem, settings);
     if (!pieces) return;
 
-    const rowElement = document.createElement("div");
+    const rowElement = doc.createElement("div");
     rowElement.classList.add("kvl-row");
     rowElement.classList.add(index % 2 === 0 ? "kvl-row-odd" : "kvl-row-even");
     applyRowDepth(rowElement, row.depth);
@@ -39,8 +40,8 @@ export function renderKeyValueList(
       );
     }
 
-    rowElement.appendChild(createKeyCell(pieces, settings));
-    rowElement.appendChild(createValueCell(pieces, settings));
+    rowElement.appendChild(createKeyCell(pieces, settings, doc));
+    rowElement.appendChild(createValueCell(pieces, doc));
     list.appendChild(rowElement);
   });
 
@@ -102,12 +103,13 @@ function applyListStyles(
 
 function createKeyCell(
   pieces: { key: string },
-  settings: KeyValueListPluginSettings
+  settings: KeyValueListPluginSettings,
+  doc: Document
 ): HTMLElement {
-  const keyCell = document.createElement("span");
+  const keyCell = doc.createElement("span");
   keyCell.classList.add("kvl-key");
 
-  const keyInner = document.createElement(
+  const keyInner = doc.createElement(
     settings.boldKey ? "strong" : "span"
   );
   keyInner.classList.add("kvl-key-inner");
@@ -119,9 +121,9 @@ function createKeyCell(
 
 function createValueCell(
   pieces: { value: string },
-  settings: KeyValueListPluginSettings
+  doc: Document
 ): HTMLElement {
-  const valueCell = document.createElement("span");
+  const valueCell = doc.createElement("span");
   valueCell.classList.add("kvl-value");
   valueCell.innerHTML = pieces.value;
   return valueCell;

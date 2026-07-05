@@ -7,8 +7,12 @@ export function getElementFont(
   return `${weight} ${style.fontSize} ${style.fontFamily}`;
 }
 
-export function measureTextWidth(text: string, font: string): number {
-  const canvas = document.createElement("canvas");
+export function measureTextWidth(
+  text: string,
+  font: string,
+  doc: Document
+): number {
+  const canvas = doc.createElement("canvas");
   const ctx = canvas.getContext("2d");
   if (!ctx) return 0;
   ctx.font = font;
