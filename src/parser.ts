@@ -185,7 +185,8 @@ function formatKeyText(
 
 export function splitKeyValueHtml(
   html: string,
-  settings: KeyValueListPluginSettings
+  settings: KeyValueListPluginSettings,
+  doc: Document
 ): KeyValuePiece | null {
   const regex = buildKeyValueRegex(settings);
   const match = html
@@ -202,7 +203,7 @@ export function splitKeyValueHtml(
     .replace(/</g, "&lt;");
 
   return {
-    key: formatKeyHtml(match[1] || "", delimiter, settings),
+    key: formatKeyHtml(match[1] || "", delimiter, settings, doc),
     delimiter,
     value: removeInvalidHtmlTags(match[3] || ""),
   };
@@ -215,7 +216,7 @@ export function splitKeyValueFromLi(
   const content = listItem.cloneNode(true) as HTMLElement;
   content.querySelectorAll(".list-bullet").forEach((el) => el.remove());
   content.querySelectorAll(":scope > ul").forEach((el) => el.remove());
-  return splitKeyValueHtml(content.innerHTML, settings);
+  return splitKeyValueHtml(content.innerHTML, settings, listItem.ownerDocument);
 }
 
 export function splitKeyValueLine(
@@ -235,9 +236,10 @@ export function splitKeyValueLine(
 function formatKeyHtml(
   key: string,
   delimiter: string,
-  settings: KeyValueListPluginSettings
+  settings: KeyValueListPluginSettings,
+  doc: Document
 ): string {
-  let result = stripListBulletMarkup(key);
+  let result = stripListBulletMarkup(key, doc);
   if (settings.displayBullet) {
     result = `${settings.displayBulletChar} ${result}`;
   }
@@ -247,8 +249,8 @@ function formatKeyHtml(
   return removeInvalidHtmlTags(result);
 }
 
-function stripListBulletMarkup(html: string): string {
-  const container = document.createElement("div");
+function stripListBulletMarkup(html: string, doc: Document): string {
+  const container = doc.createElement("div");
   container.innerHTML = html;
   container.querySelectorAll(".list-bullet").forEach((el) => el.remove());
   return container.innerHTML;

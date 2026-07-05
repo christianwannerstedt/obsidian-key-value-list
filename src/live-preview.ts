@@ -10,6 +10,7 @@ import {
 } from "@codemirror/view";
 import {
   App,
+  Component,
   Editor,
   MarkdownRenderer,
   MarkdownView,
@@ -72,6 +73,8 @@ function getLivePreviewParseSettings(
 
 class KvlRowWidget extends WidgetType {
   private readonly renderKey: string;
+  private readonly renderComponent = new Component();
+  private readonly pendingRenders: Promise<unknown>[] = [];
 
   constructor(
     private readonly plugin: KeyValueListPlugin,
@@ -105,18 +108,20 @@ class KvlRowWidget extends WidgetType {
     );
   }
 
-  toDOM(): HTMLElement {
+  toDOM(view: EditorView): HTMLElement {
+    this.renderComponent.load();
+    const doc = view?.dom?.ownerDocument ?? document;
     const pieces = splitKeyValueLine(
       this.lineText,
       getLivePreviewParseSettings(this.settings)
     );
     if (!pieces) {
-      const fallback = document.createElement("span");
+      const fallback = doc.createElement("span");
       fallback.textContent = this.lineText;
       return fallback;
     }
 
-    const row = document.createElement("span");
+    const row = doc.createElement("span");
     row.className = "kvl-live-row";
     row.classList.add(
       this.rowIndex % 2 === 0 ? "kvl-row-odd" : "kvl-row-even"
@@ -131,16 +136,16 @@ class KvlRowWidget extends WidgetType {
     );
     applyRowDepth(row, this.depth);
 
-    const keyCell = document.createElement("span");
+    const keyCell = doc.createElement("span");
     keyCell.className = "kvl-key";
-    const keyInner = document.createElement(
+    const keyInner = doc.createElement(
       this.settings.boldKey ? "strong" : "span"
     );
     keyInner.className = "kvl-key-inner";
-    this.populateKeyCell(keyInner, pieces);
+    this.populateKeyCell(keyInner, pieces, doc);
     keyCell.appendChild(keyInner);
 
-    const valueCell = document.createElement("span");
+    const valueCell = doc.createElement("span");
     valueCell.className = "kvl-value";
     this.renderMarkdown(pieces.value, valueCell);
 
@@ -149,32 +154,44 @@ class KvlRowWidget extends WidgetType {
     return row;
   }
 
-  private populateKeyCell(keyInner: HTMLElement, pieces: KeyValuePiece): void {
+  private populateKeyCell(
+    keyInner: HTMLElement,
+    pieces: KeyValuePiece,
+    doc: Document
+  ): void {
     if (this.settings.displayBullet) {
       keyInner.appendChild(
-        document.createTextNode(`${this.settings.displayBulletChar} `)
+        doc.createTextNode(`${this.settings.displayBulletChar} `)
       );
     }
 
     this.renderMarkdown(pieces.key, keyInner);
 
     if (this.settings.displayDelimiter) {
-      keyInner.appendChild(document.createTextNode(pieces.delimiter));
+      keyInner.appendChild(doc.createTextNode(pieces.delimiter));
     }
   }
 
   private renderMarkdown(markdown: string, container: HTMLElement): void {
-    MarkdownRenderer.render(
-      this.plugin.app,
-      markdown,
-      container,
-      this.path,
-      this.plugin
+    this.pendingRenders.push(
+      MarkdownRenderer.render(
+        this.plugin.app,
+        markdown,
+        container,
+        this.path,
+        this.renderComponent
+      )
     );
   }
 
   ignoreEvent(): boolean {
     return false;
+  }
+
+  destroy(): void {
+    void Promise.all(this.pendingRenders).finally(() => {
+      this.renderComponent.unload();
+    });
   }
 }
 
@@ -237,16 +254,17 @@ interface ListKeyWidth {
 function measureRenderedKeyWidth(
   pieces: KeyValuePiece,
   settings: KeyValueListPluginSettings,
-  font: string
+  font: string,
+  doc: Document
 ): number {
-  let width = measureTextWidth(pieces.key, font);
+  let width = measureTextWidth(pieces.key, font, doc);
 
   if (settings.displayBullet) {
-    width += measureTextWidth(`${settings.displayBulletChar} `, font);
+    width += measureTextWidth(`${settings.displayBulletChar} `, font, doc);
   }
 
   if (settings.displayDelimiter) {
-    width += measureTextWidth(pieces.delimiter, font);
+    width += measureTextWidth(pieces.delimiter, font, doc);
   }
 
   return width;
@@ -256,7 +274,8 @@ function computeListKeyWidth(
   list: ScannedList,
   settings: KeyValueListPluginSettings,
   font: string,
-  contentWidth: number
+  contentWidth: number,
+  doc: Document
 ): ListKeyWidth {
   let max = 0;
   const parseSettings = getLivePreviewParseSettings(settings);
@@ -264,7 +283,10 @@ function computeListKeyWidth(
   for (const line of list.lines) {
     const pieces = splitKeyValueLine(line, parseSettings);
     if (pieces) {
-      max = Math.max(max, measureRenderedKeyWidth(pieces, settings, font));
+      max = Math.max(
+        max,
+        measureRenderedKeyWidth(pieces, settings, font, doc)
+      );
     }
   }
 
@@ -287,7 +309,8 @@ function computeListRowWidth(
   font: string,
   keyWidth: number,
   contentWidth: number,
-  alignment: ListAlignment
+  alignment: ListAlignment,
+  doc: Document
 ): number {
   const maxAvailable = contentWidth - LIST_INDENT_PX;
   let maxRowWidth = 0;
@@ -298,7 +321,7 @@ function computeListRowWidth(
     const pieces = splitKeyValueLine(line, parseSettings);
     if (!pieces) continue;
 
-    const valueWidth = measureTextWidth(pieces.value, font);
+    const valueWidth = measureTextWidth(pieces.value, font, doc);
     const rowWidth =
       keyWidth + valueWidth + settings.horizontalPadding * 2 + columnGap;
     maxRowWidth = Math.max(maxRowWidth, rowWidth);
@@ -409,7 +432,8 @@ export function registerLivePreview(plugin: KeyValueListPlugin): void {
                 list,
                 plugin.settings,
                 font,
-                contentWidth
+                contentWidth,
+                view.dom.ownerDocument
               );
             const listRowWidth = computeListRowWidth(
               list,
@@ -417,7 +441,8 @@ export function registerLivePreview(plugin: KeyValueListPlugin): void {
               font,
               keyWidth,
               contentWidth,
-              listAlignment
+              listAlignment,
+              view.dom.ownerDocument
             );
 
             for (

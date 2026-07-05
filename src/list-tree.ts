@@ -22,8 +22,8 @@ export function flattenKeyValueListUl(
   depth = 0
 ): KeyValueRow[] | null {
   const listItems = Array.from(
-    ul.querySelectorAll(":scope > li")
-  ) as HTMLElement[];
+    ul.querySelectorAll<HTMLElement>(":scope > li")
+  );
 
   if (listItems.length === 0) return null;
 

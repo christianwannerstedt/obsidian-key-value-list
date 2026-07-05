@@ -2,6 +2,7 @@ import {
   App,
   ButtonComponent,
   ColorComponent,
+  Modal,
   PluginSettingTab,
   Setting,
   SliderComponent,
@@ -202,7 +203,6 @@ export class SettingTab extends PluginSettingTab {
         slider
           .setLimits(0, 99, 1)
           .setValue(this.plugin.settings.maxKeyWidth)
-          .setDynamicTooltip()
           .onChange(async (value: number) => {
             this.plugin.settings.maxKeyWidth = value;
             await this.plugin.saveData(this.plugin.settings);
@@ -360,14 +360,48 @@ export class SettingTab extends PluginSettingTab {
       .setName("Reset settings")
       .setDesc("Reset all settings to their default values")
       .addButton((button: ButtonComponent) =>
-        button.setButtonText("Reset settings").onClick(async () => {
-          if (confirm("Are you sure you want to reset the settings?")) {
+        button.setButtonText("Reset settings").onClick(() => {
+          new ResetSettingsConfirmModal(this.app, async () => {
             this.plugin.settings = Object.assign({}, DEFAULT_SETTINGS);
             await this.plugin.saveData(this.plugin.settings);
             this.display();
             this.plugin.refresh();
-          }
+          }).open();
         })
       );
+  }
+}
+
+class ResetSettingsConfirmModal extends Modal {
+  constructor(app: App, private readonly onConfirm: () => Promise<void>) {
+    super(app);
+  }
+
+  onOpen(): void {
+    const { contentEl } = this;
+
+    contentEl.createEl("p", {
+      text: "Are you sure you want to reset the settings?",
+    });
+
+    new Setting(contentEl)
+      .addButton((button) =>
+        button.setButtonText("Cancel").onClick(() => {
+          this.close();
+        })
+      )
+      .addButton((button) =>
+        button
+          .setButtonText("Reset settings")
+          .setWarning()
+          .onClick(() => {
+            this.close();
+            void this.onConfirm();
+          })
+      );
+  }
+
+  onClose(): void {
+    this.contentEl.empty();
   }
 }
